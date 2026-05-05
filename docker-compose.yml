@@ -1,0 +1,34 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: foodrush-sql
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Pass123
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+
+  redis:
+    image: redis:7
+    container_name: foodrush-redis
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: .
+      dockerfile: src/FoodRush.API/Dockerfile
+    container_name: foodrush-api
+    ports:
+      - "5000:8080"
+    depends_on:
+      - sqlserver
+      - redis
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development  
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=FoodRushDB;User Id=sa;Password=YourStrong@Pass123;TrustServerCertificate=True
+
+volumes:
+  sql_data:
