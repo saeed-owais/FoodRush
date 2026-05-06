@@ -1,0 +1,33 @@
+﻿using Microsoft.Extensions.Primitives;
+using Serilog.Context;
+
+namespace FoodRush.API.Middleware;
+
+public class RequestContextLoggingMiddleware(RequestDelegate next)
+{
+    private const string CorrelationIdHeaderName = "Correlation-Id";
+
+    public Task Invoke(HttpContext context)
+    {
+        string correlationId = GetCorrelationId(context);
+
+        context.Response.Headers.Append(
+            CorrelationIdHeaderName,
+            correlationId);
+
+        using (LogContext.PushProperty("CorrelationId", correlationId)) 
+        {
+            return next(context);
+        }
+    }
+
+    private static string GetCorrelationId(HttpContext context)
+    {
+        context.Request.Headers.TryGetValue(
+            CorrelationIdHeaderName,
+            out StringValues correlationId);
+
+        return correlationId.FirstOrDefault()
+               ?? context.TraceIdentifier;
+    }
+}
