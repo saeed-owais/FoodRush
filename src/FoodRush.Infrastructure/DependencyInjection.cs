@@ -12,11 +12,18 @@ namespace FoodRush.Infrastructure
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            // Register DbContext
+            var connectionString = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
-            // Register repositories, services, etc.
-            // services.AddScoped<IUserRepository, UserRepository>();
+            options.UseSqlServer(connectionString, sqlOptions =>
+            {
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(10),
+                    errorNumbersToAdd: null);
+            }));
+
             return services;
         }
     }
