@@ -1,23 +1,31 @@
 ﻿using FoodRush.Application.Common;
 using FoodRush.Application.Common.Errors;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FoodRush.API.Extensions
 {
     public static class CustomResults
     {
-        public static IResult Problem(this Result result)
+        public static IActionResult Problem(this Result result)
         {
             if (result.IsSuccess)
             {   
                 throw new InvalidOperationException();
             }
 
-            return Results.Problem(
-                title: GetTitle(result.Error),
-                detail: GetDetail(result.Error),
-                type: GetType(result.Error.ErrorType),
-                statusCode: GetStatusCode(result.Error.ErrorType),
-                extensions: GetErrors(result));
+            ProblemDetails problemDetails = new()
+            {
+                Title = GetTitle(result.Error),
+                Detail = GetDetail(result.Error),
+                Type = GetType(result.Error.ErrorType),
+                Status = GetStatusCode(result.Error.ErrorType),
+                Extensions = GetErrors(result)?? new Dictionary<string, object?>()
+            };
+
+            return new ObjectResult(problemDetails)
+            {
+                StatusCode = problemDetails.Status
+            };
 
             static string GetTitle(Error error) =>
                 error.ErrorType switch
