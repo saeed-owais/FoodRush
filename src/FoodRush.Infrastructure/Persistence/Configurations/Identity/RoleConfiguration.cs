@@ -12,6 +12,11 @@ namespace FoodRush.Infrastructure.Persistence.Configurations.Identity
 
             builder.HasKey(x => x.Id);
 
+            builder.HasIndex(x => x.Code).IsUnique();
+
+            builder.Property(x => x.Code)
+                   .HasMaxLength(100);
+
             builder.Property(x => x.Name)
                 .IsRequired()
                 .HasMaxLength(100);

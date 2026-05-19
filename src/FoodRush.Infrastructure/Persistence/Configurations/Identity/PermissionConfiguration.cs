@@ -17,12 +17,18 @@ namespace FoodRush.Infrastructure.Persistence.Configurations.Identity
                 .IsRequired()
                 .HasMaxLength(100);
 
+            builder.HasIndex(x => x.Name)
+                   .IsUnique();
+
             builder.Property(x => x.Code)
                 .IsRequired()
                 .HasMaxLength(200);
 
             builder.HasIndex(x => x.Code)
                 .IsUnique();
+
+            builder.Property(x => x.Description)
+                   .HasMaxLength(500);
 
             builder.Property(x => x.RowVersion)
                 .IsRowVersion();

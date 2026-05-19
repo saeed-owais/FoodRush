@@ -1,4 +1,4 @@
-﻿using FoodRush.Application.Abstractions;
+﻿using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 

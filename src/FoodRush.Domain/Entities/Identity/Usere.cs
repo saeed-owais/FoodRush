@@ -38,6 +38,8 @@ namespace FoodRush.Domain.Entities.Identity
 
         public DateTime? LastLoginAt { get; set; }
 
+        public ICollection<UserPermission> UserPermissions { get; set; }
+            = new List<UserPermission>();
         public ICollection<RefreshToken> RefreshTokens { get; set; }
             = new List<RefreshToken>();
     }

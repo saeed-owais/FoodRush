@@ -1,7 +1,7 @@
 ﻿using FoodRush.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace FoodRush.Application.Abstractions
+namespace FoodRush.Application.Abstractions.Persistence
 {
     public interface IApplicationDbContext
     {
