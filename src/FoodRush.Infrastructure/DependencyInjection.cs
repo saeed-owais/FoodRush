@@ -1,4 +1,5 @@
 ﻿using FoodRush.Application.Abstractions.Authentication;
+using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Common.Settings;
 using FoodRush.Infrastructure.Authentication;
 using FoodRush.Infrastructure.Persistence;
@@ -34,6 +35,9 @@ namespace FoodRush.Infrastructure
                     maxRetryDelay: TimeSpan.FromSeconds(10),
                     errorNumbersToAdd: null);
             }));
+
+            services.AddScoped<IApplicationDbContext>(
+                sp => sp.GetRequiredService<ApplicationDbContext>());
 
             return services;
         }

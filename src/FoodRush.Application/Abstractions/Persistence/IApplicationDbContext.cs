@@ -5,14 +5,23 @@ namespace FoodRush.Application.Abstractions.Persistence
 {
     public interface IApplicationDbContext
     {
-        DbSet<User> Users { get; }
+        public DbSet<User> Users { get; }
 
-        DbSet<RefreshToken> RefreshTokens { get; }
+        public DbSet<Role> Roles { get; }
 
-        DbSet<RevokedToken> RevokedTokens { get; }
+        public DbSet<Permission> Permissions { get; }
 
-        DbSet<OtpRequest> OtpRequests { get; }
+        public DbSet<UserRole> UserRoles { get; }
 
+        public DbSet<RolePermission> RolePermissions { get; }
+
+        public DbSet<UserPermission> UserPermissions { get; }
+
+        public DbSet<RefreshToken> RefreshTokens { get; }
+
+        public DbSet<RevokedToken> RevokedTokens { get; }
+
+        public DbSet<OtpRequest> OtpRequests { get; }
         Task<int> SaveChangesAsync(
             CancellationToken cancellationToken = default);
     }
