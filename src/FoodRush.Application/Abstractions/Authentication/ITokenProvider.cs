@@ -1,10 +1,11 @@
-﻿using FoodRush.Domain.Entities.Identity;
+﻿using FoodRush.Application.Features.Authentication;
+using FoodRush.Domain.Entities.Identity;
 
 namespace FoodRush.Application.Abstractions.Authentication
 {
     public interface ITokenProvider
     {
-        string GenerateToken(User user, IEnumerable<string> roles);
+        TokenResult GenerateToken(User user, IEnumerable<string> roles);
         string GenerateRefreshToken();
     }
 }

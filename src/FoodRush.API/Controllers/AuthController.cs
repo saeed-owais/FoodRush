@@ -1,4 +1,5 @@
 ﻿using FoodRush.API.Extensions;
+using FoodRush.Application.Features.Authentication.Login;
 using FoodRush.Application.Features.Authentication.Register;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,16 @@ namespace FoodRush.API.Controllers
             return result.IsSuccess
             ? StatusCode(StatusCodes.Status201Created, result.Value)
             : result.Problem();
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginCommand request, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(request, cancellationToken);
+
+            return result.IsSuccess
+                ? Ok(result.Value)
+                : result.Problem();
         }
     }
 }

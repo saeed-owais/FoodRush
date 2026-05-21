@@ -1,5 +1,6 @@
 ﻿using FoodRush.Application.Abstractions.Authentication;
 using FoodRush.Application.Common.Settings;
+using FoodRush.Application.Features.Authentication;
 using FoodRush.Domain.Entities.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -14,7 +15,7 @@ namespace FoodRush.Infrastructure.Authentication
     {
         private readonly JwtSettings _jwtSettings = jwtSettings.Value;
 
-        public string GenerateToken(User user, IEnumerable<string> roles)
+        public TokenResult GenerateToken(User user, IEnumerable<string> roles)
         {
             SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
 
@@ -44,7 +45,7 @@ namespace FoodRush.Infrastructure.Authentication
 
             string token = tokenHandler.CreateToken(tokenDescriptor);
 
-            return token;
+            return new TokenResult(token, tokenDescriptor.Expires.Value);
 
         }
 
