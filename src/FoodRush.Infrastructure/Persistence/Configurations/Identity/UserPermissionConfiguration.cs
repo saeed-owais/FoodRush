@@ -8,7 +8,7 @@ namespace FoodRush.Infrastructure.Persistence.Configurations.Identity
     {
         public void Configure(EntityTypeBuilder<UserPermission> builder)
         {
-            builder.ToTable("UserPermissions");
+            builder.ToTable("UserPermissions", "identity");
 
             builder.HasKey(x => new { x.UserId, x.PermissionId });
 

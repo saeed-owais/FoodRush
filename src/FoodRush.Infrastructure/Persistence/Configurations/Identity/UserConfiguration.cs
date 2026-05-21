@@ -17,9 +17,6 @@ namespace FoodRush.Infrastructure.Persistence.Configurations.Identity
                 .IsRequired()
                 .HasMaxLength(256);
 
-            builder.HasIndex(x => x.Email)
-                .IsUnique();
-
             builder.Property(x => x.NormalizedEmail)
                 .IsRequired()
                 .HasMaxLength(256);
@@ -29,9 +26,6 @@ namespace FoodRush.Infrastructure.Persistence.Configurations.Identity
 
             builder.Property(x => x.PhoneNumber)
                 .HasMaxLength(20);
-
-            builder.HasIndex(x => x.PhoneNumber)
-                .IsUnique();
 
             builder.Property(x => x.NormalizedPhoneNumber)
                 .HasMaxLength(20);

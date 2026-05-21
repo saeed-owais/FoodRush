@@ -2,6 +2,7 @@
 using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Common;
 using FoodRush.Application.Common.Errors;
+using FoodRush.Application.Common.Helpers;
 using FoodRush.Domain.Constants;
 using FoodRush.Domain.Entities.Identity;
 using MediatR;
@@ -18,10 +19,18 @@ internal sealed class RegisterCommandHandler(
         RegisterCommand request,
         CancellationToken cancellationToken)
     {
+
+        string normalizedEmail =
+            request.Email.Trim().ToUpperInvariant();
+
+        string? normalizedPhoneNumber =
+            PhoneNumberNormalizer.Normalize(
+                request.PhoneNumber!);
+
         bool emailExists = await dbContext.Users
             .AnyAsync(
                 x => x.NormalizedEmail ==
-                    request.Email.ToUpperInvariant(),
+                    normalizedEmail,
                 cancellationToken);
 
         if (emailExists)
@@ -35,7 +44,7 @@ internal sealed class RegisterCommandHandler(
         bool phoneExists = await dbContext.Users
             .AnyAsync(
                 x => x.NormalizedPhoneNumber ==
-                    request.PhoneNumber!.ToUpperInvariant(),
+                    normalizedPhoneNumber,
                 cancellationToken);
 
         if (phoneExists)
@@ -50,12 +59,12 @@ internal sealed class RegisterCommandHandler(
             Email = request.Email,
 
             NormalizedEmail =
-                request.Email.ToUpperInvariant(),
+                normalizedEmail,
 
             PhoneNumber = request.PhoneNumber,
 
             NormalizedPhoneNumber =
-                request.PhoneNumber?.ToUpperInvariant(),
+                normalizedPhoneNumber,
 
             PasswordHash =
                 passwordHasher.Hash(request.Password),

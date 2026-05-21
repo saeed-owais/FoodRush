@@ -22,7 +22,7 @@ namespace FoodRush.API.Controllers
             var result = await _mediator.Send(request, cancellationToken);
 
             return result.IsSuccess
-            ? Ok(result.Value)
+            ? StatusCode(StatusCodes.Status201Created, result.Value)
             : result.Problem();
         }
     }
