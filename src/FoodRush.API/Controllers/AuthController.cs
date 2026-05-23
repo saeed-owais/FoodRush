@@ -6,6 +6,7 @@ using FoodRush.Application.Features.Authentication.Logout;
 using FoodRush.Application.Features.Authentication.Refresh;
 using FoodRush.Application.Features.Authentication.Register;
 using FoodRush.Application.Features.Authentication.Sessions;
+using FoodRush.Application.Features.Authentication.Sessions.RevokeSession;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -147,6 +148,22 @@ namespace FoodRush.API.Controllers
 
             return result.IsSuccess
                 ? Ok(result.Value)
+                : result.Problem();
+        }
+
+        [Authorize]
+        [HttpDelete("sessions/{sessionId:guid}")]
+        public async Task<IActionResult> RevokeSession(Guid sessionId, CancellationToken cancellationToken)
+        {
+            RevokeSessionCommand command =
+                new(sessionId);
+
+            Result result = await _mediator.Send(
+                command,
+                cancellationToken);
+
+            return result.IsSuccess
+                ? NoContent()
                 : result.Problem();
         }
     }
