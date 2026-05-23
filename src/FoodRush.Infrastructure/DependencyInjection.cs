@@ -1,6 +1,7 @@
 ﻿using FoodRush.Application.Abstractions.Authentication;
 using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Common.Settings;
+using FoodRush.Domain.Entities.Identity;
 using FoodRush.Infrastructure.Authentication;
 using FoodRush.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
 
 namespace FoodRush.Infrastructure
@@ -18,7 +20,8 @@ namespace FoodRush.Infrastructure
         {
             services
                 .AddDatabase(configuration)
-                .AddJwtAuthentication(configuration);
+                .AddJwtAuthentication(configuration)
+                .AddAuthorization();
 
             return services;
         }
@@ -88,11 +91,59 @@ namespace FoodRush.Infrastructure
 
                             ClockSkew = TimeSpan.Zero
                         };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnTokenValidated = async context =>
+                        {
+                            IApplicationDbContext dbContext =
+                                context.HttpContext.RequestServices
+                                    .GetRequiredService<IApplicationDbContext>();
+
+                            ClaimsPrincipal principal =
+                                context.Principal!;
+
+                            string? userId =
+                                principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                            string? securityStamp =
+                                principal.FindFirst("security_stamp")?.Value;
+
+                            if (string.IsNullOrWhiteSpace(userId) ||
+                                string.IsNullOrWhiteSpace(securityStamp))
+                            {
+                                context.Fail("Invalid token.");
+
+                                return;
+                            }
+
+                            User? user = await dbContext.Users
+                                .AsNoTracking()
+                                .FirstOrDefaultAsync(
+                                    u => u.Id == Guid.Parse(userId));
+
+                            if (user is null)
+                            {
+                                context.Fail("Invalid token.");
+
+                                return;
+                            }
+
+                            if (user.SecurityStamp != securityStamp)
+                            {
+                                context.Fail("Token has been revoked.");
+
+                                return;
+                            }
+                        }
+                    };
                 });
 
             services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
             services.AddScoped<ITokenProvider, TokenProvider>();
             services.AddScoped<IUserContext, UserContext>();
+            services.AddScoped<ICurrentRequestInfo, CurrentRequestInfo>();
+            services.AddScoped<IRefreshTokenHasher, RefreshTokenHasher>();
             services.AddHttpContextAccessor();
             return services;
         }

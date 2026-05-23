@@ -1,5 +1,8 @@
 ﻿using FoodRush.API.Extensions;
+using FoodRush.Application.Common;
+using FoodRush.Application.Common.Errors;
 using FoodRush.Application.Features.Authentication.Login;
+using FoodRush.Application.Features.Authentication.Refresh;
 using FoodRush.Application.Features.Authentication.Register;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -32,9 +35,72 @@ namespace FoodRush.API.Controllers
         {
             var result = await _mediator.Send(request, cancellationToken);
 
-            return result.IsSuccess
-                ? Ok(result.Value)
-                : result.Problem();
+            if (result.IsFailure)
+            {
+                return result.Problem();
+            }
+
+            Response.Cookies.Append(
+                "refreshToken",
+                result.Value.RefreshToken,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddDays(7)
+                });
+
+            return Ok(new
+            {
+                AccessToken = result.Value.AccessToken,
+                ExpiresAt = result.Value.ExpiresAtUtc
+            });
+        }
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
+        {
+            string? refreshToken =
+                Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return Result
+                    .Failure(
+                        Error.Unauthorized(
+                            "Auth.MissingRefreshToken",
+                            "Refresh token is missing."))
+                    .Problem();
+            }
+
+            RefreshTokenCommand command =
+                new(refreshToken);
+
+            var result = await _mediator.Send(
+                command,
+                cancellationToken);
+
+            if (result.IsFailure)
+            {
+                return result.Problem();
+            }
+
+            Response.Cookies.Append(
+                "refreshToken",
+                result.Value.RefreshToken,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddDays(7)
+                });
+
+            return Ok(new
+            {
+                AccessToken = result.Value.AccessToken,
+                ExpiresAt = result.Value.ExpiresAtUtc
+            });
         }
     }
 }

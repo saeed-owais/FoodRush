@@ -11,7 +11,9 @@ namespace FoodRush.Application.Features.Authentication.Login;
 internal sealed class LoginCommandHandler(
     IApplicationDbContext dbContext,
     IPasswordHasher passwordHasher,
-    ITokenProvider tokenProvider)
+    ITokenProvider tokenProvider,
+    IRefreshTokenHasher refreshTokenHasher,
+    ICurrentRequestInfo currentRequestInfo)
     : IRequestHandler<LoginCommand, Result<LoginResponse>>
 {
     private const int MaxFailedAttempts = 5;
@@ -88,11 +90,16 @@ internal sealed class LoginCommandHandler(
 
         string refreshTokenValue = tokenProvider.GenerateRefreshToken();
 
+        string refreshTokenHash = refreshTokenHasher.Hash(refreshTokenValue);
+
         RefreshToken refreshToken = new()
         {
             UserId = user.Id,
-            Token = refreshTokenValue,
-            ExpiresAt = DateTime.UtcNow.AddDays(7)
+            TokenHash = refreshTokenHash,
+            JwtId = tokenResult.JwtId,
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            CreatedByIp = currentRequestInfo.IpAddress,
+            UserAgent = currentRequestInfo.UserAgent
         };
 
         await dbContext.RefreshTokens.AddAsync(refreshToken, cancellationToken);

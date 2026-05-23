@@ -45,7 +45,10 @@ namespace FoodRush.Infrastructure.Authentication
 
             string token = tokenHandler.CreateToken(tokenDescriptor);
 
-            return new TokenResult(token, tokenDescriptor.Expires.Value);
+            return new TokenResult(
+                token,
+                tokenDescriptor.Subject.FindFirst(JwtRegisteredClaimNames.Jti)?.Value,
+                tokenDescriptor.Expires.Value);
 
         }
 

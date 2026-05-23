@@ -19,8 +19,6 @@ namespace FoodRush.Application.Abstractions.Persistence
 
         public DbSet<RefreshToken> RefreshTokens { get; }
 
-        public DbSet<RevokedToken> RevokedTokens { get; }
-
         public DbSet<OtpRequest> OtpRequests { get; }
         Task<int> SaveChangesAsync(
             CancellationToken cancellationToken = default);

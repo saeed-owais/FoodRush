@@ -9,7 +9,7 @@ namespace FoodRush.Domain.Entities.Identity
 
         public User User { get; set; } = default!;
 
-        public string Token { get; set; } = string.Empty;
+        public string TokenHash { get; set; } = string.Empty;
 
         public DateTime ExpiresAt { get; set; }
 
@@ -17,11 +17,32 @@ namespace FoodRush.Domain.Entities.Identity
 
         public DateTime? RevokedAt { get; set; }
 
+        public string? ReplacedByTokenHash { get; set; }
+
+        public string? JwtId { get; set; }
+
+        public string? CreatedByIp { get; set; }
+
+        public string? RevokedByIp { get; set; }
+
+        public string? UserAgent { get; set; }
+
         [NotMapped]
-        public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
+        public bool IsExpired =>
+            DateTime.UtcNow >= ExpiresAt;
+
         [NotMapped]
-        public bool IsRevoked => RevokedAt is not null;
+        public bool IsRevoked =>
+            RevokedAt is not null;
+
         [NotMapped]
-        public bool IsUsed => UsedAt is not null;
+        public bool IsUsed =>
+            UsedAt is not null;
+
+        [NotMapped]
+        public bool IsActive =>
+            !IsExpired &&
+            !IsRevoked &&
+            !IsUsed;
     }
 }

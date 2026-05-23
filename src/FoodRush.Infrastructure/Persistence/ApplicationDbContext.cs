@@ -34,8 +34,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     public DbSet<RefreshToken> RefreshTokens { get; set; }
 
-    public DbSet<RevokedToken> RevokedTokens { get; set; }
-
     public DbSet<OtpRequest> OtpRequests { get; set; }
 
     override protected void OnModelCreating(ModelBuilder modelBuilder)
