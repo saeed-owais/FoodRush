@@ -2,9 +2,11 @@
 using FoodRush.Application.Common;
 using FoodRush.Application.Common.Errors;
 using FoodRush.Application.Features.Authentication.Login;
+using FoodRush.Application.Features.Authentication.Logout;
 using FoodRush.Application.Features.Authentication.Refresh;
 using FoodRush.Application.Features.Authentication.Register;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FoodRush.API.Controllers
@@ -57,6 +59,7 @@ namespace FoodRush.API.Controllers
                 ExpiresAt = result.Value.ExpiresAtUtc
             });
         }
+
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
         {
@@ -101,6 +104,36 @@ namespace FoodRush.API.Controllers
                 AccessToken = result.Value.AccessToken,
                 ExpiresAt = result.Value.ExpiresAtUtc
             });
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout(CancellationToken cancellationToken)
+        {
+            string? refreshToken = Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return NoContent();
+            }
+
+            LogoutCommand command = new(refreshToken);
+
+            var result = await _mediator.Send(command, cancellationToken);
+
+            if (result.IsFailure)
+            {
+                return result.Problem();
+            }
+
+            Response.Cookies.Delete("refreshToken", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            });
+
+            return NoContent();
         }
     }
 }
