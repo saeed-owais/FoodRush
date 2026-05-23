@@ -6,6 +6,7 @@ using FoodRush.Application.Features.Authentication.Logout;
 using FoodRush.Application.Features.Authentication.Refresh;
 using FoodRush.Application.Features.Authentication.Register;
 using FoodRush.Application.Features.Authentication.Sessions;
+using FoodRush.Application.Features.Authentication.Sessions.LogoutAllSessions;
 using FoodRush.Application.Features.Authentication.Sessions.RevokeSession;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -161,6 +162,31 @@ namespace FoodRush.API.Controllers
             Result result = await _mediator.Send(
                 command,
                 cancellationToken);
+
+            return result.IsSuccess
+                ? NoContent()
+                : result.Problem();
+        }
+
+        [Authorize]
+        [HttpPost("logout-all-sessions")]
+        public async Task<IActionResult> LogoutAllSessions(CancellationToken cancellationToken)
+        {
+            LogoutAllSessionsCommand command =
+                new();
+
+            Result result = await _mediator.Send(
+                command,
+                cancellationToken);
+
+            Response.Cookies.Delete(
+                "refreshToken",
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict
+                });
 
             return result.IsSuccess
                 ? NoContent()
