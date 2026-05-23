@@ -44,10 +44,12 @@ internal sealed class LoginCommandHandler(
                     "Your account is disabled."));
         }
 
+        DateTime utcNow = DateTime.UtcNow;
+
         if (user.LockoutEnd.HasValue &&
-            user.LockoutEnd.Value > DateTime.UtcNow)
+            user.LockoutEnd.Value > utcNow)
         {
-            TimeSpan lockoutTimeRemaining = user.LockoutEnd.Value - DateTime.UtcNow;
+            TimeSpan lockoutTimeRemaining = user.LockoutEnd.Value - utcNow;
             return Result.Failure<LoginResponse>(
                 Error.Unauthorized(
                     "Auth.AccountLocked",
@@ -64,7 +66,7 @@ internal sealed class LoginCommandHandler(
 
             if (user.FailedLoginAttempts >= MaxFailedAttempts)
             {
-                user.LockoutEnd = DateTime.UtcNow.AddMinutes(15);
+                user.LockoutEnd = utcNow.AddMinutes(15);
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -78,7 +80,7 @@ internal sealed class LoginCommandHandler(
 
         user.FailedLoginAttempts = 0;
         user.LockoutEnd = null;
-        user.LastLoginAt = DateTime.UtcNow;
+        user.LastLoginAt = utcNow;
 
 
         IEnumerable<string> roles = await dbContext.UserRoles
@@ -97,9 +99,10 @@ internal sealed class LoginCommandHandler(
             UserId = user.Id,
             TokenHash = refreshTokenHash,
             JwtId = tokenResult.JwtId,
-            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            ExpiresAt = utcNow.AddDays(7),
             CreatedByIp = currentRequestInfo.IpAddress,
-            UserAgent = currentRequestInfo.UserAgent
+            UserAgent = currentRequestInfo.UserAgent,
+            LastUsedAt = utcNow
         };
 
         await dbContext.RefreshTokens.AddAsync(refreshToken, cancellationToken);

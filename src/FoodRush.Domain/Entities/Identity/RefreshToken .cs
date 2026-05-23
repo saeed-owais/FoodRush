@@ -15,6 +15,8 @@ namespace FoodRush.Domain.Entities.Identity
 
         public DateTime? UsedAt { get; set; }
 
+        public DateTime? LastUsedAt { get; set; }
+
         public DateTime? RevokedAt { get; set; }
 
         public string? ReplacedByTokenHash { get; set; }

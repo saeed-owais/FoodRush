@@ -84,6 +84,8 @@ internal sealed class RefreshTokenCommandHandler(
 
         refreshTokenEntity.UsedAt = utcNow;
 
+        refreshTokenEntity.LastUsedAt = utcNow;
+
         //refreshTokenEntity.RevokedAt = utcNow;
 
         refreshTokenEntity.ReplacedByTokenHash = newRefreshTokenHash;
@@ -95,7 +97,8 @@ internal sealed class RefreshTokenCommandHandler(
             ExpiresAt = utcNow.AddDays(7),
             JwtId = tokenResult.JwtId,
             CreatedByIp = ipAddress,
-            UserAgent = userAgent
+            UserAgent = userAgent,
+            LastUsedAt = utcNow
         };
 
         await dbContext.RefreshTokens
