@@ -5,6 +5,7 @@ using FoodRush.Application.Features.Authentication.Login;
 using FoodRush.Application.Features.Authentication.Logout;
 using FoodRush.Application.Features.Authentication.Refresh;
 using FoodRush.Application.Features.Authentication.Register;
+using FoodRush.Application.Features.Authentication.Sessions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -134,6 +135,19 @@ namespace FoodRush.API.Controllers
             });
 
             return NoContent();
+        }
+
+        [Authorize]
+        [HttpGet("sessions")]
+        public async Task<IActionResult> GetSessions(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new GetSessionsQuery(),
+                cancellationToken);
+
+            return result.IsSuccess
+                ? Ok(result.Value)
+                : result.Problem();
         }
     }
 }

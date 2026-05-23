@@ -8,6 +8,8 @@
 
         string? Email { get; }
 
+        string? RefreshToken { get; }
+
         IReadOnlyCollection<string> Roles { get; }
 
         string? SecurityStamp { get; }

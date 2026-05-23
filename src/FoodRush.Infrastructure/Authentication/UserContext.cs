@@ -15,6 +15,11 @@ namespace FoodRush.Infrastructure.Authentication
 
         public string? Email => User?.FindFirst(ClaimTypes.Email)?.Value;
 
+        public string? RefreshToken =>
+            httpContextAccessor.HttpContext?
+                .Request
+                .Cookies["refreshToken"];
+
         public IReadOnlyCollection<string> Roles =>
             User?.FindAll(ClaimTypes.Role)
             .Select(c => c.Value).ToList() ?? [];
