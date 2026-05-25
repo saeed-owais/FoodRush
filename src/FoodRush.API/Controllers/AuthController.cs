@@ -110,7 +110,7 @@ namespace FoodRush.API.Controllers
         }
 
         [Authorize]
-        [HttpPost("logout")]
+        [HttpPost("logout-current-session")]
         public async Task<IActionResult> Logout(CancellationToken cancellationToken)
         {
             string? refreshToken = Request.Cookies["refreshToken"];

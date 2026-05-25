@@ -3,6 +3,7 @@ using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Common.Settings;
 using FoodRush.Domain.Entities.Identity;
 using FoodRush.Infrastructure.Authentication;
+using FoodRush.Infrastructure.BackgroundJobs;
 using FoodRush.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -18,17 +19,20 @@ namespace FoodRush.Infrastructure
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
+            var connectionString = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
             services
-                .AddDatabase(configuration)
+                .AddDatabase(connectionString)
                 .AddJwtAuthentication(configuration)
+                .AddBackgroundJobs(connectionString)
                 .AddAuthorization();
 
             return services;
         }
-        public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddDatabase(this IServiceCollection services, string connectionString)
         {
-            var connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 
             services.AddDbContext<ApplicationDbContext>(options =>
             {
@@ -147,5 +151,6 @@ namespace FoodRush.Infrastructure
             services.AddHttpContextAccessor();
             return services;
         }
+
     }
 }

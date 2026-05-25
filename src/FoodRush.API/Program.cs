@@ -1,6 +1,7 @@
 using FoodRush.API.Extensions;
 using FoodRush.Application;
 using FoodRush.Infrastructure;
+using FoodRush.Infrastructure.BackgroundJobs;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
@@ -48,6 +49,8 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 app.UseExceptionHandler();
 app.UseRequestContextLogging();
 app.UseSerilogRequestLogging();
+
+app.UseBackgroundJobs();
 
 app.UseHttpsRedirection();
 
