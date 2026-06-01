@@ -50,6 +50,8 @@ public static class DependencyInjection
     public static void UseBackgroundJobs(
         this WebApplication app)
     {
+        Console.WriteLine("HANGFIRE DASHBOARD REGISTERED");
+
         app.UseHangfireDashboard("/hangfire");
 
         RecurringJob.AddOrUpdate<IRefreshTokenCleanupJob>(
