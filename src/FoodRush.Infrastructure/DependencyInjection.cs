@@ -3,9 +3,11 @@ using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Common.Settings;
 using FoodRush.Domain.Entities.Identity;
 using FoodRush.Infrastructure.Authentication;
+using FoodRush.Infrastructure.Authorization;
 using FoodRush.Infrastructure.BackgroundJobs;
 using FoodRush.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,7 +28,8 @@ namespace FoodRush.Infrastructure
                 .AddDatabase(connectionString)
                 .AddJwtAuthentication(configuration)
                 .AddBackgroundJobs(connectionString)
-                .AddAuthorization();
+                .AddAuthorization()
+                .AddJwtAuthorization();
 
             return services;
         }
@@ -152,5 +155,17 @@ namespace FoodRush.Infrastructure
             return services;
         }
 
+        public static IServiceCollection AddJwtAuthorization(this IServiceCollection services)
+        {
+            services.AddAuthorization();
+
+            services.AddSingleton<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
+
+            services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+            services.AddScoped<PermissionsProvider>();
+
+            return services;
+        }
     }
 }

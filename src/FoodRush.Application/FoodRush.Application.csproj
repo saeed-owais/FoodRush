@@ -8,8 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Abstractions\Authorization\**" />
     <Compile Remove="Authentication\**" />
+    <EmbeddedResource Remove="Abstractions\Authorization\**" />
     <EmbeddedResource Remove="Authentication\**" />
+    <None Remove="Abstractions\Authorization\**" />
     <None Remove="Authentication\**" />
   </ItemGroup>
 

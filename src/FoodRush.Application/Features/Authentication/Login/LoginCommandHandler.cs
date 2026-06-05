@@ -88,7 +88,22 @@ internal sealed class LoginCommandHandler(
             .Select(userRole => userRole.Role.Code)
             .ToListAsync(cancellationToken);
 
-        TokenResult tokenResult = tokenProvider.GenerateToken(user, roles);
+        var permissions = await
+        (
+            dbContext.RolePermissions
+                .Where(rp => rp.Role.UserRoles
+                    .Any(ur => ur.UserId == user.Id))
+                .Select(rp => rp.Permission.Code)
+
+            .Union(
+                dbContext.UserPermissions
+                    .Where(up => up.UserId == user.Id)
+                    .Select(up => up.Permission.Code)
+            )
+        )
+        .ToListAsync(cancellationToken);
+
+        TokenResult tokenResult = tokenProvider.GenerateToken(user, roles, permissions);
 
         string refreshTokenValue = tokenProvider.GenerateRefreshToken();
 

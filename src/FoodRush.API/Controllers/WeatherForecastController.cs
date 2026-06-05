@@ -1,4 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
+using FoodRush.API.Attributes;
+using FoodRush.Application.Common.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FoodRush.API.Controllers
@@ -13,7 +14,8 @@ namespace FoodRush.API.Controllers
         ];
 
         [HttpGet(Name = "GetWeatherForecast")]
-        [Authorize]
+        //[Authorize]
+        [HasPermission(Permissions.Users.Read)]
         public IEnumerable<WeatherForecast> Get()
         {
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

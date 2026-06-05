@@ -15,7 +15,7 @@ namespace FoodRush.Infrastructure.Authentication
     {
         private readonly JwtSettings _jwtSettings = jwtSettings.Value;
 
-        public TokenResult GenerateToken(User user, IEnumerable<string> roles)
+        public TokenResult GenerateToken(User user, IEnumerable<string> roles, IEnumerable<string> permissions)
         {
             SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
 
@@ -31,6 +31,7 @@ namespace FoodRush.Infrastructure.Authentication
             ];
 
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+            claims.AddRange(permissions.Select(permission => new Claim("permission", permission)));
 
             SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor
             {
