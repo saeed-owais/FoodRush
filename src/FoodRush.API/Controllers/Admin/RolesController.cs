@@ -21,7 +21,7 @@ namespace FoodRush.API.Controllers.Admin
             _mediator = mediator;
         }
 
-        [HttpGet("roles")]
+        [HttpGet]
         [HasPermission(Permissions.Roles.Read)]
         public async Task<IActionResult> GetAllRoles()
         {
