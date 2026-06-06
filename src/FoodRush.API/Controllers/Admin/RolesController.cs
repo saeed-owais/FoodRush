@@ -2,6 +2,8 @@
 using FoodRush.API.Extensions;
 using FoodRush.Application.Common;
 using FoodRush.Application.Common.Authorization;
+using FoodRush.Application.Features.Administration.Roles;
+using FoodRush.Application.Features.Administration.Roles.GetRoleById;
 using FoodRush.Application.Features.Administration.Roles.GetRoles;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -28,6 +30,17 @@ namespace FoodRush.API.Controllers.Admin
             Result<List<RoleResponse>> roles = await _mediator.Send(new GetRolesQuery());
 
             return roles.Match(
+                success => Ok(success),
+                error => error.Problem());
+        }
+
+        [HttpGet("{roleId:guid}")]
+        [HasPermission(Permissions.Roles.Read)]
+        public async Task<IActionResult> GetRoleById(Guid roleId)
+        {
+            Result<RoleResponse> role = await _mediator.Send(new GetRoleByIdQuery(roleId));
+
+            return role.Match(
                 success => Ok(success),
                 error => error.Problem());
         }
