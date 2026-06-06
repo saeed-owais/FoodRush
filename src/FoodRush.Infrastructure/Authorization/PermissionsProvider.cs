@@ -13,9 +13,20 @@ internal class PermissionsProvider
     }
     public async Task<HashSet<string>> GetUserPermissions(Guid userId)
     {
-        HashSet<string>? permissions = await _dbContext.UserPermissions
+        HashSet<string> permissions =
+        await _dbContext.UserPermissions
             .Where(up => up.UserId == userId)
             .Select(up => up.Permission.Code)
+
+            .Union(
+
+                _dbContext.UserRoles
+                    .Where(ur => ur.UserId == userId)
+                    .SelectMany(
+                        ur => ur.Role.RolePermissions
+                            .Select(rp => rp.Permission.Code))
+
+            )
             .ToHashSetAsync();
 
         return permissions;
