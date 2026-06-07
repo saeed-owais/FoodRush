@@ -8,6 +8,7 @@ using FoodRush.Application.Features.Administration.Roles.AssignPermissionToRole;
 using FoodRush.Application.Features.Administration.Roles.GetRoleById;
 using FoodRush.Application.Features.Administration.Roles.GetRolePermissions;
 using FoodRush.Application.Features.Administration.Roles.GetRoles;
+using FoodRush.Application.Features.Administration.Roles.RemovePermissionFromRole;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -71,6 +72,24 @@ namespace FoodRush.API.Controllers.Admin
                 new AssignPermissionToRoleCommand(
                     roleId,
                     request.PermissionId),
+                cancellationToken);
+
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
+        [HttpDelete("{roleId:guid}/permissions/{permissionId:guid}")]
+        [HasPermission(Permissions.Roles.Update)]
+        public async Task<IActionResult> RemovePermission(
+            Guid roleId,
+            Guid permissionId,
+            CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(
+                new RemovePermissionFromRoleCommand(
+                    roleId,
+                    permissionId),
                 cancellationToken);
 
             return result.Match(
