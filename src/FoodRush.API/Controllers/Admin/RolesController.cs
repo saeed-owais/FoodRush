@@ -6,6 +6,7 @@ using FoodRush.Application.Common.Authorization;
 using FoodRush.Application.Features.Administration.Roles;
 using FoodRush.Application.Features.Administration.Roles.AssignPermissionToRole;
 using FoodRush.Application.Features.Administration.Roles.CreateRole;
+using FoodRush.Application.Features.Administration.Roles.DeleteRole;
 using FoodRush.Application.Features.Administration.Roles.GetRoleById;
 using FoodRush.Application.Features.Administration.Roles.GetRolePermissions;
 using FoodRush.Application.Features.Administration.Roles.GetRoles;
@@ -132,5 +133,17 @@ namespace FoodRush.API.Controllers.Admin
                 failure => failure.Problem());
         }
 
+        [HttpDelete("{roleId:guid}")]
+        [HasPermission(Permissions.Roles.Delete)]
+        public async Task<IActionResult> DeleteRole(Guid roleId, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(
+                new DeleteRoleCommand(roleId),
+                cancellationToken);
+
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
     }
 }

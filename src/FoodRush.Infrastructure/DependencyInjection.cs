@@ -48,6 +48,9 @@ namespace FoodRush.Infrastructure
                         errorNumbersToAdd: null);
                 });
 
+                options.EnableDetailedErrors();
+
+                options.EnableSensitiveDataLogging();
             });
 
             services.AddScoped<IApplicationDbContext>(

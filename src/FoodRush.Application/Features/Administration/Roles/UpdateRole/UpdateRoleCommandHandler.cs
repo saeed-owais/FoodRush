@@ -14,6 +14,7 @@ internal sealed class UpdateRoleCommandHandler
     public async Task<Result<UpdateRoleResponse>> Handle(UpdateRoleCommand request, CancellationToken cancellationToken)
     {
         Role? role = await _dbContext.Roles
+            .AsTracking()
             .FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken);
 
         if (role == null)
