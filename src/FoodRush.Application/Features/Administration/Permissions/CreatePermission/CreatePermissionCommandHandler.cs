@@ -13,15 +13,33 @@ internal sealed class CreatePermissionCommandHandler
 {
     public async Task<Result<CreatePermissionResponse>> Handle(CreatePermissionCommand request, CancellationToken cancellationToken)
     {
-        bool roleExists = await _dbContext.Permissions
-            .AnyAsync(r => r.Code == request.Code, cancellationToken);
+        Permission? permission = await _dbContext.Permissions
+            .IgnoreQueryFilters()
+            .AsTracking()
+            .FirstOrDefaultAsync(r => r.Code == request.Code, cancellationToken);
 
-        if (roleExists)
+        if (permission != null)
         {
-            return Result.Failure<CreatePermissionResponse>(
-                Error.Conflict(
-                    "Permission.AlreadyExists",
-                    $"Permission with code '{request.Code}' already exists."));
+            if (!permission.IsDeleted)
+            {
+                return Result.Failure<CreatePermissionResponse>(
+                    Error.Conflict(
+                        "Permission.AlreadyExists",
+                        $"Permission with code '{request.Code}' already exists ."));
+            }
+
+            permission.IsDeleted = false;
+            permission.DeletedAt = null;
+            permission.DeletedBy = null;
+
+            permission.Name = request.Name;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return new CreatePermissionResponse(
+                permission.Id,
+                permission.Name,
+                permission.Code);
         }
 
         Permission newPermission = new Permission
