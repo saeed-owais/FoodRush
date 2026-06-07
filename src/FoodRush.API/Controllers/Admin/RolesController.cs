@@ -10,6 +10,7 @@ using FoodRush.Application.Features.Administration.Roles.GetRoleById;
 using FoodRush.Application.Features.Administration.Roles.GetRolePermissions;
 using FoodRush.Application.Features.Administration.Roles.GetRoles;
 using FoodRush.Application.Features.Administration.Roles.RemovePermissionFromRole;
+using FoodRush.Application.Features.Administration.Roles.UpdateRole;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -112,5 +113,24 @@ namespace FoodRush.API.Controllers.Admin
 
                 error => error.Problem());
         }
+
+        [HttpPut("{roleId:guid}")]
+        [HasPermission(Permissions.Roles.Update)]
+        public async Task<IActionResult> UpdateRole(Guid roleId, UpdateRoleRequest request, CancellationToken cancellationToken)
+        {
+            Result<UpdateRoleResponse> result =
+                await _mediator.Send(
+                    new UpdateRoleCommand(
+                        Id: roleId,
+                        Name: request.Name,
+                        Code: request.Code
+                    ),
+                    cancellationToken);
+
+            return result.Match(
+                Ok,
+                failure => failure.Problem());
+        }
+
     }
 }
