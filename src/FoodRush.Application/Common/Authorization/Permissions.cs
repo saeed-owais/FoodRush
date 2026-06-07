@@ -20,7 +20,10 @@ public static class Permissions
 
     public static class PermissionsManagement
     {
-        public const string Read = "permissions:read";
         public const string Assign = "permissions:assign";
+        public const string Read = "permissions:read";
+        public const string Create = "permissions:create";
+        public const string Update = "permissions:update";
+        public const string Delete = "permissions:delete";
     }
 }
