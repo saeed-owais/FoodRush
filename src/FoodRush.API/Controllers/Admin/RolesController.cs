@@ -5,6 +5,7 @@ using FoodRush.Application.Common;
 using FoodRush.Application.Common.Authorization;
 using FoodRush.Application.Features.Administration.Roles;
 using FoodRush.Application.Features.Administration.Roles.AssignPermissionToRole;
+using FoodRush.Application.Features.Administration.Roles.CreateRole;
 using FoodRush.Application.Features.Administration.Roles.GetRoleById;
 using FoodRush.Application.Features.Administration.Roles.GetRolePermissions;
 using FoodRush.Application.Features.Administration.Roles.GetRoles;
@@ -95,6 +96,21 @@ namespace FoodRush.API.Controllers.Admin
             return result.Match(
                 NoContent,
                 failure => failure.Problem());
+        }
+
+        [HttpPost]
+        [HasPermission(Permissions.Roles.Create)]
+        public async Task<IActionResult> CreateRole(CreateRoleCommand request, CancellationToken cancellationToken)
+        {
+            Result<CreateRoleResponse> role = await _mediator.Send(request, cancellationToken);
+
+            return role.Match(
+                success => CreatedAtAction(
+                    nameof(GetRoleById),
+                    new { roleId = success.Id },
+                    success),
+
+                error => error.Problem());
         }
     }
 }
