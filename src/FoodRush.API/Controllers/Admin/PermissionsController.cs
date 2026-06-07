@@ -4,6 +4,7 @@ using FoodRush.API.ViewModels;
 using FoodRush.Application.Common;
 using FoodRush.Application.Common.Authorization;
 using FoodRush.Application.Features.Administration.Permissions.CreatePermission;
+using FoodRush.Application.Features.Administration.Permissions.DeletePermission;
 using FoodRush.Application.Features.Administration.Permissions.GetPermissions;
 using FoodRush.Application.Features.Administration.Permissions.UpdatePermission;
 using MediatR;
@@ -57,6 +58,21 @@ namespace FoodRush.API.Controllers.Admin
                 success => Ok(success),
                 onFailure: errors => errors.Problem());
         }
+
+
+        [HttpDelete("{permissionId:guid}")]
+        [HasPermission(Permissions.PermissionsManagement.Delete)]
+        public async Task<IActionResult> DeletePermission(Guid permissionId, CancellationToken cancellationToken)
+        {
+            var command = new DeletePermissionCommand(permissionId);
+
+            Result result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                NoContent,
+                onFailure: errors => errors.Problem());
+        }
+
     }
 }
 
