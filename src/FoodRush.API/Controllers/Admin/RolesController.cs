@@ -53,7 +53,7 @@ namespace FoodRush.API.Controllers.Admin
         }
 
         [HttpGet("{roleId:guid}/permissions")]
-        [HasPermission(Permissions.Roles.Read)]
+        [HasPermission(Permissions.RolePermissions.Read)]
         public async Task<IActionResult> GetRolePermissions(Guid roleId)
         {
             Result<List<RolePermissionResponse>> rolePermissions =
@@ -65,7 +65,7 @@ namespace FoodRush.API.Controllers.Admin
         }
 
         [HttpPost("{roleId:guid}/permissions")]
-        [HasPermission(Permissions.Roles.Update)]
+        [HasPermission(Permissions.RolePermissions.Assign)]
         public async Task<IActionResult> AssignPermission(
             Guid roleId,
             AssignPermissionRequest request,
@@ -83,7 +83,7 @@ namespace FoodRush.API.Controllers.Admin
         }
 
         [HttpDelete("{roleId:guid}/permissions/{permissionId:guid}")]
-        [HasPermission(Permissions.Roles.Update)]
+        [HasPermission(Permissions.RolePermissions.Remove)]
         public async Task<IActionResult> RemovePermission(
             Guid roleId,
             Guid permissionId,

@@ -26,4 +26,26 @@ public static class Permissions
         public const string Update = "permissions:update";
         public const string Delete = "permissions:delete";
     }
+
+    public static class RolePermissions
+    {
+        public const string Read = "rolepermissions:read";
+        public const string Assign = "rolepermissions:assign";
+        public const string Remove = "rolepermissions:remove";
+    }
+
+    public static class UserRoles
+    {
+        public const string Read = "userroles:read";
+        public const string Assign = "userroles:assign";
+        public const string Remove = "userroles:remove";
+    }
+
+    public static class UserPermissions
+    {
+        public const string Read = "userpermissions:read";
+        public const string Assign = "userpermissions:assign";
+        public const string Remove = "userpermissions:remove";
+    }
+
 }
