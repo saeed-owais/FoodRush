@@ -4,6 +4,7 @@ using FoodRush.Application.Common;
 using FoodRush.Application.Common.Authorization;
 using FoodRush.Application.Common.Models;
 using FoodRush.Application.Features.Administration.Users.AssignPermissionToUser;
+using FoodRush.Application.Features.Administration.Users.GetUserById;
 using FoodRush.Application.Features.Administration.Users.GetUsers;
 using FoodRush.Application.Features.Administration.Users.RemovePermissionFromUser;
 using MediatR;
@@ -21,6 +22,17 @@ public class UsersController(IMediator _mediator) : ControllerBase
     {
         Result<PaginatedResponse<GetUsersResponse>> result =
             await _mediator.Send(query, cancellationToken);
+
+        return result.Match(
+            Ok,
+            failure => failure.Problem());
+    }
+
+    [HttpGet("{userId:guid}")]
+    [HasPermission(Permissions.Users.Read)]
+    public async Task<IActionResult> GetUserById(Guid userId, CancellationToken cancellationToken)
+    {
+        Result<GetUserByIdResponse> result = await _mediator.Send(new GetUserByIdQuery(userId), cancellationToken);
 
         return result.Match(
             Ok,
