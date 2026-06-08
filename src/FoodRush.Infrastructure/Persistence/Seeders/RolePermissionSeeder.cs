@@ -1,4 +1,5 @@
-﻿using FoodRush.Domain.Entities.Identity;
+﻿using FoodRush.Application.Common.Authorization;
+using FoodRush.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodRush.Infrastructure.Persistence.Seeders;
@@ -6,38 +7,43 @@ namespace FoodRush.Infrastructure.Persistence.Seeders;
 internal static class RolePermissionSeeder
 {
     public static async Task SeedRolePermissionsAsync(
-    ApplicationDbContext dbContext,
-    CancellationToken cancellationToken)
+        ApplicationDbContext dbContext,
+        CancellationToken cancellationToken)
     {
-        if (await dbContext.RolePermissions.AnyAsync(cancellationToken))
-        {
-            return;
-        }
-
-        Role? superAdminRole =
+        Role superAdminRole =
             await dbContext.Roles
                 .FirstAsync(
-                    r => r.Code == "SUPER_ADMIN",
+                    r => r.Code == Roles.SuperAdmin,
                     cancellationToken);
 
         List<Permission> permissions =
             await dbContext.Permissions
                 .ToListAsync(cancellationToken);
 
-        List<RolePermission> rolePermissions =
-            permissions
-                .Select(permission => new RolePermission
-                {
-                    RoleId = superAdminRole.Id,
-                    PermissionId = permission.Id
-                })
-                .ToList();
+        HashSet<Guid> assignedPermissionIds = await dbContext.RolePermissions
+            .Where(rp => rp.RoleId == superAdminRole.Id)
+            .Select(rp => rp.PermissionId)
+            .ToHashSetAsync(cancellationToken);
+
+        List<RolePermission> newRolePermissions = permissions
+            .Where(p => !assignedPermissionIds.Contains(p.Id))
+            .Select(p => new RolePermission
+            {
+                RoleId = superAdminRole.Id,
+                PermissionId = p.Id
+            })
+            .ToList();
+
+        if (newRolePermissions.Count == 0)
+        {
+            return;
+        }
 
         await dbContext.RolePermissions.AddRangeAsync(
-            rolePermissions,
+            newRolePermissions,
             cancellationToken);
 
-        await dbContext.SaveChangesAsync(
-            cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

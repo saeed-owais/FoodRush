@@ -7,45 +7,75 @@ namespace FoodRush.Infrastructure.Persistence.Seeders;
 internal static class PermissionSeeder
 {
     public static async Task SeedPermissionsAsync(
-    ApplicationDbContext dbContext,
-    CancellationToken cancellationToken)
+       ApplicationDbContext dbContext,
+       CancellationToken cancellationToken = default)
     {
-        if (await dbContext.Permissions.AnyAsync(cancellationToken))
+        IEnumerable<(string Name, string Code)> permissions =
+            GetPermissions();
+
+        foreach ((string name, string code) in permissions)
         {
-            return;
+            Permission? existingPermission =
+                await dbContext.Permissions
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(
+                        p => p.Code == code,
+                        cancellationToken);
+
+            if (existingPermission is null)
+            {
+                await dbContext.Permissions.AddAsync(
+                    new Permission
+                    {
+                        Name = name,
+                        Code = code
+                    },
+                    cancellationToken);
+
+                continue;
+            }
+
+            if (existingPermission.IsDeleted)
+            {
+                existingPermission.IsDeleted = false;
+                existingPermission.DeletedAt = null;
+                existingPermission.DeletedBy = null;
+                existingPermission.Name = name;
+            }
         }
 
-        string[] permissions =
-        [
-        Permissions.Users.Read,
-        Permissions.Users.Create,
-        Permissions.Users.Update,
-        Permissions.Users.Delete,
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 
-        Permissions.Roles.Read,
-        Permissions.Roles.Create,
-        Permissions.Roles.Update,
-        Permissions.Roles.Delete,
+    private static IEnumerable<(string Name, string Code)> GetPermissions()
+    {
+        Type permissionsType = typeof(Permissions);
 
-        Permissions.PermissionsManagement.Read,
-        Permissions.PermissionsManagement.Assign
-        ];
+        foreach (Type nestedType in permissionsType.GetNestedTypes())
+        {
+            string groupName = nestedType.Name;
 
-        List<Permission> entities =
-            permissions
-                .Select(permission => new Permission
+            foreach (var field in nestedType.GetFields(
+                         System.Reflection.BindingFlags.Public |
+                         System.Reflection.BindingFlags.Static |
+                         System.Reflection.BindingFlags.FlattenHierarchy))
+            {
+                if (!field.IsLiteral ||
+                    field.IsInitOnly ||
+                    field.FieldType != typeof(string))
                 {
-                    Name = permission,
-                    Code = permission
-                })
-                .ToList();
+                    continue;
+                }
 
-        await dbContext.Permissions.AddRangeAsync(
-            entities,
-            cancellationToken);
+                string code =
+                    (string)field.GetRawConstantValue()!;
 
-        await dbContext.SaveChangesAsync(
-            cancellationToken);
+                string name =
+                    $"{groupName} {field.Name}";
+
+                yield return (name, code);
+            }
+        }
     }
 }
 

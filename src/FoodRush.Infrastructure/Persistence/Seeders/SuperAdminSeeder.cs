@@ -1,4 +1,5 @@
 ﻿using FoodRush.Application.Abstractions.Authentication;
+using FoodRush.Application.Common.Authorization;
 using FoodRush.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -51,7 +52,7 @@ internal static class SuperAdminSeeder
         Role superAdminRole =
             await dbContext.Roles
                 .FirstAsync(
-                    r => r.Code == "SUPER_ADMIN",
+                    r => r.Code == Roles.SuperAdmin,
                     cancellationToken);
 
         await dbContext.UserRoles.AddAsync(

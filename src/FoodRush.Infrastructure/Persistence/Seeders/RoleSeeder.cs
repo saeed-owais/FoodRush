@@ -1,57 +1,78 @@
-﻿using FoodRush.Domain.Entities.Identity;
+﻿using FoodRush.Application.Common.Authorization;
+using FoodRush.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace FoodRush.Infrastructure.Persistence.Seeders;
 
 internal static class RoleSeeder
 {
     public static async Task SeedRolesAsync(
-    ApplicationDbContext dbContext,
-    CancellationToken cancellationToken)
+        ApplicationDbContext dbContext,
+        CancellationToken cancellationToken)
     {
-        if (await dbContext.Roles.AnyAsync(cancellationToken))
+        IEnumerable<(string Name, string Code)> roles =
+            GetRoles();
+
+        foreach ((string Name, string Code) role in roles)
         {
-            return;
+            Role? existingRole =
+                await dbContext.Roles
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(
+                        r => r.Code == role.Code,
+                        cancellationToken);
+
+            if (existingRole is null)
+            {
+                await dbContext.Roles.AddAsync(
+                    new Role
+                    {
+                        Name = role.Name,
+                        Code = role.Code
+                    },
+                    cancellationToken);
+
+                continue;
+            }
+
+            if (existingRole.IsDeleted)
+            {
+                existingRole.IsDeleted = false;
+                existingRole.DeletedAt = null;
+                existingRole.DeletedBy = null;
+            }
+
+            existingRole.Name = role.Name;
         }
 
-        List<Role> roles =
-        [
-            new()
-        {
-            Name = "Super Admin",
-            Code = "SUPER_ADMIN"
-        },
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 
-        new()
-        {
-            Name = "Admin",
-            Code = "ADMIN"
-        },
+    private static IEnumerable<(string Name, string Code)> GetRoles()
+    {
+        FieldInfo[] fields =
+            typeof(Roles)
+                .GetFields(
+                    BindingFlags.Public |
+                    BindingFlags.Static |
+                    BindingFlags.FlattenHierarchy);
 
-        new()
+        foreach (FieldInfo field in fields)
         {
-            Name = "Customer",
-            Code = "CUSTOMER"
-        },
+            if (!field.IsLiteral ||
+                field.IsInitOnly ||
+                field.FieldType != typeof(string))
+            {
+                continue;
+            }
 
-        new()
-        {
-            Name = "Driver",
-            Code = "DRIVER"
-        },
+            string code =
+                (string)field.GetRawConstantValue()!;
 
-        new()
-        {
-            Name = "Restaurant Owner",
-            Code = "RESTAURANT_OWNER"
+            yield return (
+                Name: field.Name,
+                Code: code);
         }
-        ];
-
-        await dbContext.Roles.AddRangeAsync(
-            roles,
-            cancellationToken);
-
-        await dbContext.SaveChangesAsync(
-            cancellationToken);
     }
 }
