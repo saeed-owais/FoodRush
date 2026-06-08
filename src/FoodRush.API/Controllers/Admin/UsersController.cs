@@ -2,7 +2,9 @@
 using FoodRush.API.Extensions;
 using FoodRush.Application.Common;
 using FoodRush.Application.Common.Authorization;
+using FoodRush.Application.Common.Models;
 using FoodRush.Application.Features.Administration.Users.AssignPermissionToUser;
+using FoodRush.Application.Features.Administration.Users.GetUsers;
 using FoodRush.Application.Features.Administration.Users.RemovePermissionFromUser;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +15,18 @@ namespace FoodRush.API.Controllers.Admin;
 [ApiController]
 public class UsersController(IMediator _mediator) : ControllerBase
 {
+    [HttpGet]
+    [HasPermission(Permissions.Users.Read)]
+    public async Task<IActionResult> GetUsers([FromQuery] GetUsersQuery query, CancellationToken cancellationToken)
+    {
+        Result<PaginatedResponse<GetUsersResponse>> result =
+            await _mediator.Send(query, cancellationToken);
+
+        return result.Match(
+            Ok,
+            failure => failure.Problem());
+    }
+
     [HttpPost("{userId:guid}/permissions/{permissionId:guid}")]
     [HasPermission(Permissions.UserPermissions.Assign)]
     public async Task<IActionResult> AssignPermissionToUser(Guid userId, Guid permissionId, CancellationToken cancellationToken)

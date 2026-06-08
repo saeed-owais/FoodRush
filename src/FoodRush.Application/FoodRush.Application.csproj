@@ -34,4 +34,8 @@
     <Folder Include="Abstractions\Caching\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Features\Administration\Users\GetUsers\GetUsersResponse.cs" />
+  </ItemGroup>
+
 </Project>
