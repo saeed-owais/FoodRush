@@ -7,6 +7,7 @@ using FoodRush.Application.Common.Models;
 using FoodRush.Application.Features.Administration.Users.AssignPermissionToUser;
 using FoodRush.Application.Features.Administration.Users.AssignRoleToUser;
 using FoodRush.Application.Features.Administration.Users.BanUser;
+using FoodRush.Application.Features.Administration.Users.DeleteUser;
 using FoodRush.Application.Features.Administration.Users.GetUserById;
 using FoodRush.Application.Features.Administration.Users.GetUserRoles;
 using FoodRush.Application.Features.Administration.Users.GetUsers;
@@ -126,6 +127,17 @@ public class UsersController(IMediator _mediator) : ControllerBase
     public async Task<IActionResult> UnBanUser(Guid userId, CancellationToken cancellationToken)
     {
         Result result = await _mediator.Send(new UnBanUserCommand(userId), cancellationToken);
+
+        return result.Match(
+            NoContent,
+            failure => failure.Problem());
+    }
+
+    [HttpDelete("{userId:guid}")]
+    [HasPermission(Permissions.Users.Delete)]
+    public async Task<IActionResult> DeleteUser(Guid userId, CancellationToken cancellationToken)
+    {
+        Result result = await _mediator.Send(new DeleteUserCommand(userId), cancellationToken);
 
         return result.Match(
             NoContent,
