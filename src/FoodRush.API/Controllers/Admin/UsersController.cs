@@ -1,10 +1,12 @@
 ﻿using FoodRush.API.Attributes;
 using FoodRush.API.Extensions;
+using FoodRush.API.ViewModels;
 using FoodRush.Application.Common;
 using FoodRush.Application.Common.Authorization;
 using FoodRush.Application.Common.Models;
 using FoodRush.Application.Features.Administration.Users.AssignPermissionToUser;
 using FoodRush.Application.Features.Administration.Users.AssignRoleToUser;
+using FoodRush.Application.Features.Administration.Users.BanUser;
 using FoodRush.Application.Features.Administration.Users.GetUserById;
 using FoodRush.Application.Features.Administration.Users.GetUserRoles;
 using FoodRush.Application.Features.Administration.Users.GetUsers;
@@ -103,4 +105,19 @@ public class UsersController(IMediator _mediator) : ControllerBase
             NoContent,
             failure => failure.Problem());
     }
+
+    [HttpPut("{userId}/ban")]
+    [HasPermission(Permissions.Users.Update)]
+    public async Task<IActionResult> BanUser(Guid userId, [FromBody] BanUserRequest banUserRequest, CancellationToken cancellationToken)
+    {
+        Result result = await _mediator.Send(new BanUserCommand(
+            userId,
+            banUserRequest.BanEndDate), cancellationToken);
+
+        return result.Match(
+            NoContent,
+            failure => failure.Problem());
+
+    }
 }
+
