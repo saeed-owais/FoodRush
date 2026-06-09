@@ -9,6 +9,7 @@ using FoodRush.Application.Features.Administration.Users.GetUserById;
 using FoodRush.Application.Features.Administration.Users.GetUserRoles;
 using FoodRush.Application.Features.Administration.Users.GetUsers;
 using FoodRush.Application.Features.Administration.Users.RemovePermissionFromUser;
+using FoodRush.Application.Features.Administration.Users.RemoveRoleFromUser;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -60,6 +61,17 @@ public class UsersController(IMediator _mediator) : ControllerBase
     public async Task<IActionResult> AssignRoleToUser(Guid userId, Guid roleId, CancellationToken cancellationToken)
     {
         Result result = await _mediator.Send(new AssignRoleToUserCommand(userId, roleId), cancellationToken);
+
+        return result.Match(
+            NoContent,
+            failure => failure.Problem());
+    }
+
+    [HttpDelete("{userId:guid}/roles/{roleId:guid}")]
+    [HasPermission(Permissions.UserRoles.Remove)]
+    public async Task<IActionResult> RemoveRoleFromUser(Guid userId, Guid roleId, CancellationToken cancellationToken)
+    {
+        Result result = await _mediator.Send(new RemoveRoleFromUserCommand(userId, roleId), cancellationToken);
 
         return result.Match(
             NoContent,
