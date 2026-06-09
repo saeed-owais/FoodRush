@@ -4,6 +4,7 @@ using FoodRush.Application.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using RolesConstants = FoodRush.Application.Common.Authorization.Roles;
 
 namespace FoodRush.Application.Features.Administration.Users.DeleteUser;
 
@@ -14,12 +15,40 @@ internal sealed class DeleteUserCommandHnadler
     public async Task<Result> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
         User? user = await dbContext.Users
-            .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+            .FirstOrDefaultAsync(
+                u => u.Id == request.UserId,
+                cancellationToken);
 
-        if (user == null)
+        if (user is null)
         {
             return Result.Failure(
-                Error.NotFound("User.NotFound", $"User with ID {request.UserId} was not found"));
+                Error.NotFound(
+                    "User.NotFound",
+                    $"User with ID {request.UserId} was not found."));
+        }
+
+        bool isSuperAdmin = await dbContext.UserRoles
+            .AnyAsync(
+                ur =>
+                    ur.UserId == request.UserId &&
+                    ur.Role.Code == RolesConstants.SuperAdmin,
+                cancellationToken);
+
+        if (isSuperAdmin)
+        {
+            int superAdminsCount = await dbContext.UserRoles
+                .Where(ur => ur.Role.Code == RolesConstants.SuperAdmin)
+                .Select(ur => ur.UserId)
+                .Distinct()
+                .CountAsync(cancellationToken);
+
+            if (superAdminsCount <= 1)
+            {
+                return Result.Failure(
+                    Error.Conflict(
+                        "User.LastSuperAdmin",
+                        "The last super admin cannot be deleted."));
+            }
         }
 
         dbContext.Users.Remove(user);
