@@ -12,6 +12,7 @@ using FoodRush.Application.Features.Administration.Users.GetUserRoles;
 using FoodRush.Application.Features.Administration.Users.GetUsers;
 using FoodRush.Application.Features.Administration.Users.RemovePermissionFromUser;
 using FoodRush.Application.Features.Administration.Users.RemoveRoleFromUser;
+using FoodRush.Application.Features.Administration.Users.UnBanUser;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -106,7 +107,7 @@ public class UsersController(IMediator _mediator) : ControllerBase
             failure => failure.Problem());
     }
 
-    [HttpPut("{userId}/ban")]
+    [HttpPost("{userId}/ban")]
     [HasPermission(Permissions.Users.Update)]
     public async Task<IActionResult> BanUser(Guid userId, [FromBody] BanUserRequest banUserRequest, CancellationToken cancellationToken)
     {
@@ -119,5 +120,17 @@ public class UsersController(IMediator _mediator) : ControllerBase
             failure => failure.Problem());
 
     }
+
+    [HttpPost("{userId}/unban")]
+    [HasPermission(Permissions.Users.Update)]
+    public async Task<IActionResult> UnBanUser(Guid userId, CancellationToken cancellationToken)
+    {
+        Result result = await _mediator.Send(new UnBanUserCommand(userId), cancellationToken);
+
+        return result.Match(
+            NoContent,
+            failure => failure.Problem());
+    }
 }
+
 
