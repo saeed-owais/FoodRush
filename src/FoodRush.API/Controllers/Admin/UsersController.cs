@@ -13,6 +13,7 @@ using FoodRush.Application.Features.Administration.Users.GetUserRoles;
 using FoodRush.Application.Features.Administration.Users.GetUsers;
 using FoodRush.Application.Features.Administration.Users.RemovePermissionFromUser;
 using FoodRush.Application.Features.Administration.Users.RemoveRoleFromUser;
+using FoodRush.Application.Features.Administration.Users.RestoreUser;
 using FoodRush.Application.Features.Administration.Users.UnBanUser;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -138,6 +139,17 @@ public class UsersController(IMediator _mediator) : ControllerBase
     public async Task<IActionResult> DeleteUser(Guid userId, CancellationToken cancellationToken)
     {
         Result result = await _mediator.Send(new DeleteUserCommand(userId), cancellationToken);
+
+        return result.Match(
+            NoContent,
+            failure => failure.Problem());
+    }
+
+    [HttpPost("{userId:guid}/restore")]
+    [HasPermission(Permissions.Users.Update)]
+    public async Task<IActionResult> RestoreUser(Guid userId, CancellationToken cancellationToken)
+    {
+        Result result = await _mediator.Send(new RestoreUserCommand(userId), cancellationToken);
 
         return result.Match(
             NoContent,
