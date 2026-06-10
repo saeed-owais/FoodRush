@@ -10,10 +10,6 @@ internal static class BackgroundJobsConfiguration
         RecurringJob.AddOrUpdate<IRefreshTokenCleanupJob>(
             BackgroundJobNames.RefreshTokenCleanup,
             job => job.ExecuteAsync(default),
-<<<<<<< HEAD
             Cron.Monthly);
-=======
-            Cron.Daily);
->>>>>>> b4f2e5f0f1a7ae20086cf5f8dde65b9d35b6f639
     }
 }
