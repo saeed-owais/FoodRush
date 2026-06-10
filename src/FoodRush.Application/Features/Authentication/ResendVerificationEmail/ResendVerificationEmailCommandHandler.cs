@@ -46,7 +46,7 @@ internal sealed class ResendVerificationEmailCommandHandler
         var token = tokenProvider.GenerateToken(user);
 
         string verificationLink =
-            $"{frontendSettings.EmailVerificationUrl}?token={Uri.EscapeDataString(token)}";
+            $"{_frontendSettings.EmailVerificationUrl}?token={Uri.EscapeDataString(token)}";
 
 
         backgroundJobService.Enqueue<IEmailService>(emailService => emailService.SendAsync(

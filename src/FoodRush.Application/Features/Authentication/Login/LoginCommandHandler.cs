@@ -44,6 +44,14 @@ internal sealed class LoginCommandHandler(
                     "Your account is disabled."));
         }
 
+        if (!user.IsEmailVerified)
+        {
+            return Result.Failure<LoginResponse>(
+                Error.Conflict(
+                    "Auth.EmailNotVerified",
+                    "Please verify your email before signing in."));
+        }
+
         DateTime utcNow = DateTime.UtcNow;
 
         if (user.LockoutEnd.HasValue &&

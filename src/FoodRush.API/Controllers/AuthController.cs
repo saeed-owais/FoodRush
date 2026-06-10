@@ -5,9 +5,11 @@ using FoodRush.Application.Features.Authentication.Login;
 using FoodRush.Application.Features.Authentication.Logout;
 using FoodRush.Application.Features.Authentication.Refresh;
 using FoodRush.Application.Features.Authentication.Register;
+using FoodRush.Application.Features.Authentication.ResendVerificationEmail;
 using FoodRush.Application.Features.Authentication.Sessions;
 using FoodRush.Application.Features.Authentication.Sessions.LogoutAllSessions;
 using FoodRush.Application.Features.Authentication.Sessions.RevokeSession;
+using FoodRush.Application.Features.Authentication.VerifyEmail;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -191,6 +193,31 @@ namespace FoodRush.API.Controllers
             return result.IsSuccess
                 ? NoContent()
                 : result.Problem();
+        }
+
+        [HttpPost("resend-verification-email")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResendVerificationEmail(
+            [FromBody] ResendVerificationEmailCommand command,
+            CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(
+                command,
+                cancellationToken);
+
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
+        [HttpPost("verify-email")]
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailCommand command, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(command, cancellationToken);
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
         }
     }
 }
