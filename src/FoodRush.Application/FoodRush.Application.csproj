@@ -10,10 +10,13 @@
   <ItemGroup>
     <Compile Remove="Abstractions\Authorization\**" />
     <Compile Remove="Authentication\**" />
+    <Compile Remove="Common\Constant\**" />
     <EmbeddedResource Remove="Abstractions\Authorization\**" />
     <EmbeddedResource Remove="Authentication\**" />
+    <EmbeddedResource Remove="Common\Constant\**" />
     <None Remove="Abstractions\Authorization\**" />
     <None Remove="Authentication\**" />
+    <None Remove="Common\Constant\**" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,6 +1,7 @@
 ﻿using FoodRush.API.Extensions;
 using FoodRush.Application.Common;
 using FoodRush.Application.Common.Errors;
+using FoodRush.Application.Features.Authentication.ForgotPassword;
 using FoodRush.Application.Features.Authentication.Login;
 using FoodRush.Application.Features.Authentication.Logout;
 using FoodRush.Application.Features.Authentication.Refresh;
@@ -213,6 +214,16 @@ namespace FoodRush.API.Controllers
         [HttpPost("verify-email")]
         [AllowAnonymous]
         public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailCommand command, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(command, cancellationToken);
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command, CancellationToken cancellationToken)
         {
             Result result = await _mediator.Send(command, cancellationToken);
             return result.Match(
