@@ -2,6 +2,6 @@
 {
     internal interface IRefreshTokenCleanupJob
     {
-        Task ExecuteAsync(CancellationToken cancellationToken);
+        Task ExecuteAsync(CancellationToken cancellationToken = default);
     }
 }

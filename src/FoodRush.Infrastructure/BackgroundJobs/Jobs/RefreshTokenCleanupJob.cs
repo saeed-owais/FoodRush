@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FoodRush.Infrastructure.BackgroundJobs.Jobs
 {
-    internal class RefreshTokenCleanupJob : IRefreshTokenCleanupJob
+    internal sealed class RefreshTokenCleanupJob : IRefreshTokenCleanupJob
     {
         private readonly IApplicationDbContext _dbContext;
         public RefreshTokenCleanupJob(IApplicationDbContext dbContext)
