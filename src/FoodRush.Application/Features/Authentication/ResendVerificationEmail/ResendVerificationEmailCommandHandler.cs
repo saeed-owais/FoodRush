@@ -1,12 +1,14 @@
 ﻿using FoodRush.Application.Abstractions.Authentication;
+using FoodRush.Application.Abstractions.BackgroundJobs;
 using FoodRush.Application.Abstractions.Notifications;
 using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Common;
 using FoodRush.Application.Common.Errors;
+using FoodRush.Application.Common.Settings;
 using FoodRush.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace FoodRush.Application.Features.Authentication.ResendVerificationEmail;
 
@@ -14,16 +16,20 @@ internal sealed class ResendVerificationEmailCommandHandler
     (
     IApplicationDbContext dbContext,
     IEmailVerificationTokenProvider tokenProvider,
-    [FromKeyedServices("FakeEmailService")] IEmailService emailService
+    IBackgroundJobService backgroundJobService,
+    IOptions<FrontendSettings> options
     )
     : IRequestHandler<ResendVerificationEmailCommand, Result>
 {
+    private readonly FrontendSettings _frontendSettings = options.Value;
+
     public async Task<Result> Handle(ResendVerificationEmailCommand request, CancellationToken cancellationToken)
     {
         string normalizedEmail =
             request.Email.Trim().ToUpperInvariant();
 
         User? user = await dbContext.Users
+            .AsNoTracking()
             .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
 
         if (user == null)
@@ -40,13 +46,14 @@ internal sealed class ResendVerificationEmailCommandHandler
         var token = tokenProvider.GenerateToken(user);
 
         string verificationLink =
-            $"https://localhost:3000/verify-email?token={Uri.EscapeDataString(token)}";
+            $"{frontendSettings.EmailVerificationUrl}?token={Uri.EscapeDataString(token)}";
 
-        await emailService.SendAsync(
+
+        backgroundJobService.Enqueue<IEmailService>(emailService => emailService.SendAsync(
             user.Email,
             "Verify Your Email",
-            $"Please click the following link to verify your email: {verificationLink}",
-            cancellationToken);
+            $"Please click the following link to verify your email: {verificationLink}"
+            ));
 
         return Result.Success();
     }

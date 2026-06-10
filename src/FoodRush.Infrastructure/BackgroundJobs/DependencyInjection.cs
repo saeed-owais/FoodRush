@@ -1,4 +1,5 @@
-﻿using FoodRush.Infrastructure.BackgroundJobs.Interfaces;
+﻿using FoodRush.Application.Abstractions.BackgroundJobs;
+using FoodRush.Infrastructure.BackgroundJobs.Interfaces;
 using FoodRush.Infrastructure.BackgroundJobs.Jobs;
 using Hangfire;
 using Hangfire.SqlServer;
@@ -43,6 +44,9 @@ public static class DependencyInjection
 
         services.AddScoped<IRefreshTokenCleanupJob,
             RefreshTokenCleanupJob>();
+
+        services.AddScoped<IBackgroundJobService,
+            HangfireBackgroundJobService>();
 
         return services;
     }
