@@ -1,10 +1,12 @@
 ﻿using FoodRush.Application.Abstractions.Authentication;
+using FoodRush.Application.Abstractions.Notifications;
 using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Common.Settings;
 using FoodRush.Domain.Entities.Identity;
 using FoodRush.Infrastructure.Authentication;
 using FoodRush.Infrastructure.Authorization;
 using FoodRush.Infrastructure.BackgroundJobs;
+using FoodRush.Infrastructure.Notifications;
 using FoodRush.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -29,7 +31,8 @@ namespace FoodRush.Infrastructure
                 .AddJwtAuthentication(configuration)
                 .AddBackgroundJobs(connectionString)
                 .AddAuthorization()
-                .AddJwtAuthorization();
+                .AddJwtAuthorization()
+                .AddNotifications();
 
             return services;
         }
@@ -167,6 +170,17 @@ namespace FoodRush.Infrastructure
             services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
             services.AddScoped<PermissionsProvider>();
+
+            return services;
+        }
+
+        public static IServiceCollection AddNotifications(this IServiceCollection services)
+        {
+            services.AddDataProtection();
+
+            services.AddScoped<IEmailVerificationTokenProvider, EmailVerificationTokenProvider>();
+
+            services.AddKeyedScoped<IEmailService, FakeEmailService>("FakeEmailService");
 
             return services;
         }

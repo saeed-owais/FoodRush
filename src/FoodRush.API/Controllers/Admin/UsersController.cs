@@ -15,7 +15,9 @@ using FoodRush.Application.Features.Administration.Users.RemovePermissionFromUse
 using FoodRush.Application.Features.Administration.Users.RemoveRoleFromUser;
 using FoodRush.Application.Features.Administration.Users.RestoreUser;
 using FoodRush.Application.Features.Administration.Users.UnBanUser;
+using FoodRush.Application.Features.Authentication.ResendVerificationEmail;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FoodRush.API.Controllers.Admin;
@@ -150,6 +152,21 @@ public class UsersController(IMediator _mediator) : ControllerBase
     public async Task<IActionResult> RestoreUser(Guid userId, CancellationToken cancellationToken)
     {
         Result result = await _mediator.Send(new RestoreUserCommand(userId), cancellationToken);
+
+        return result.Match(
+            NoContent,
+            failure => failure.Problem());
+    }
+
+    [HttpPost("resend-verification-email")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResendVerificationEmail(
+    [FromBody] ResendVerificationEmailCommand command,
+    CancellationToken cancellationToken)
+    {
+        Result result = await _mediator.Send(
+            command,
+            cancellationToken);
 
         return result.Match(
             NoContent,
