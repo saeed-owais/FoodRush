@@ -3,6 +3,7 @@ using FoodRush.Application.Common;
 using FoodRush.Application.Common.Errors;
 using FoodRush.Application.Features.Authentication.ChangePassword;
 using FoodRush.Application.Features.Authentication.ForgotPassword;
+using FoodRush.Application.Features.Authentication.GetUserPrfile;
 using FoodRush.Application.Features.Authentication.Login;
 using FoodRush.Application.Features.Authentication.Logout;
 using FoodRush.Application.Features.Authentication.Refresh;
@@ -253,6 +254,17 @@ namespace FoodRush.API.Controllers
             return result.Match(
                 NoContent,
                 failure => failure.Problem());
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> Me(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetUserPrfileQuery(), cancellationToken);
+
+            return result.IsSuccess
+                ? Ok(result.Value)
+                : result.Problem();
         }
     }
 }
