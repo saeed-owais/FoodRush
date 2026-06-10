@@ -7,6 +7,7 @@ using FoodRush.Application.Features.Authentication.Logout;
 using FoodRush.Application.Features.Authentication.Refresh;
 using FoodRush.Application.Features.Authentication.Register;
 using FoodRush.Application.Features.Authentication.ResendVerificationEmail;
+using FoodRush.Application.Features.Authentication.ResetPassword;
 using FoodRush.Application.Features.Authentication.Sessions;
 using FoodRush.Application.Features.Authentication.Sessions.LogoutAllSessions;
 using FoodRush.Application.Features.Authentication.Sessions.RevokeSession;
@@ -226,6 +227,17 @@ namespace FoodRush.API.Controllers
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command, CancellationToken cancellationToken)
         {
             Result result = await _mediator.Send(command, cancellationToken);
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(command, cancellationToken);
+
             return result.Match(
                 NoContent,
                 failure => failure.Problem());
