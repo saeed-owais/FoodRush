@@ -54,9 +54,6 @@ public static class DependencyInjection
 
         app.UseHangfireDashboard("/hangfire");
 
-        RecurringJob.AddOrUpdate<IRefreshTokenCleanupJob>(
-            "refresh-token-cleanup",
-            job => job.ExecuteAsync(default),
-            Cron.Daily);
+        BackgroundJobsConfiguration.RegisterRecurringJobs();
     }
 }
