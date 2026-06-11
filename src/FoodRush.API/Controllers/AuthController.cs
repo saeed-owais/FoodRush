@@ -13,6 +13,7 @@ using FoodRush.Application.Features.Authentication.ResetPassword;
 using FoodRush.Application.Features.Authentication.Sessions;
 using FoodRush.Application.Features.Authentication.Sessions.LogoutAllSessions;
 using FoodRush.Application.Features.Authentication.Sessions.RevokeSession;
+using FoodRush.Application.Features.Authentication.UpdateProfile;
 using FoodRush.Application.Features.Authentication.VerifyEmail;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -265,6 +266,17 @@ namespace FoodRush.API.Controllers
             return result.IsSuccess
                 ? Ok(result.Value)
                 : result.Problem();
+        }
+
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile(UpdateProfileCommand command, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
         }
     }
 }
