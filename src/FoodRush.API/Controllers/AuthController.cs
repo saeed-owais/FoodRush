@@ -3,6 +3,7 @@ using FoodRush.Application.Common;
 using FoodRush.Application.Common.Errors;
 using FoodRush.Application.Features.Authentication.ChangeEmail;
 using FoodRush.Application.Features.Authentication.ChangePassword;
+using FoodRush.Application.Features.Authentication.ConfirmEmailChange;
 using FoodRush.Application.Features.Authentication.ForgotPassword;
 using FoodRush.Application.Features.Authentication.GetUserPrfile;
 using FoodRush.Application.Features.Authentication.Login;
@@ -309,5 +310,17 @@ namespace FoodRush.API.Controllers
                 NoContent,
                 failure => failure.Problem());
         }
+
+        [HttpPost("confirm-email-change")]
+        [Authorize]
+        public async Task<IActionResult> ConfirmEmailChange([FromBody] ConfirmEmailChangeCommand command, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
     }
 }

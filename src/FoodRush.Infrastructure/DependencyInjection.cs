@@ -138,10 +138,16 @@ namespace FoodRush.Infrastructure
                                 return;
                             }
 
+                            if (!Guid.TryParse(userId, out Guid parsedUserId))
+                            {
+                                context.Fail("Invalid token.");
+                                return;
+                            }
+
                             User? user = await dbContext.Users
                                 .AsNoTracking()
                                 .FirstOrDefaultAsync(
-                                    u => u.Id == Guid.Parse(userId));
+                                    u => u.Id == parsedUserId);
 
                             if (user is null)
                             {
