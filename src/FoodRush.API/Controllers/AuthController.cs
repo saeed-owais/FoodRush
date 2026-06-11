@@ -14,6 +14,7 @@ using FoodRush.Application.Features.Authentication.Sessions;
 using FoodRush.Application.Features.Authentication.Sessions.LogoutAllSessions;
 using FoodRush.Application.Features.Authentication.Sessions.RevokeSession;
 using FoodRush.Application.Features.Authentication.UpdateProfile;
+using FoodRush.Application.Features.Authentication.UploadAvatar;
 using FoodRush.Application.Features.Authentication.VerifyEmail;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -276,6 +277,24 @@ namespace FoodRush.API.Controllers
 
             return result.Match(
                 NoContent,
+                failure => failure.Problem());
+        }
+
+        [HttpPost("avatar")]
+        [Authorize]
+        public async Task<IActionResult> UploadAvatar(IFormFile file, CancellationToken cancellationToken)
+        {
+            await using var stream = file.OpenReadStream();
+
+            UploadAvatarCommand command = new(
+                file.Length,
+                file.ContentType,
+                stream, file.FileName);
+
+            var result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                Ok,
                 failure => failure.Problem());
         }
     }

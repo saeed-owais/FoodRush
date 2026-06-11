@@ -1,6 +1,7 @@
 ﻿using FoodRush.Application.Abstractions.Authentication;
 using FoodRush.Application.Abstractions.Notifications;
 using FoodRush.Application.Abstractions.Persistence;
+using FoodRush.Application.Abstractions.Storage;
 using FoodRush.Application.Common.Settings;
 using FoodRush.Domain.Entities.Identity;
 using FoodRush.Infrastructure.Authentication;
@@ -8,6 +9,7 @@ using FoodRush.Infrastructure.Authorization;
 using FoodRush.Infrastructure.BackgroundJobs;
 using FoodRush.Infrastructure.Notifications;
 using FoodRush.Infrastructure.Persistence;
+using FoodRush.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +37,10 @@ namespace FoodRush.Infrastructure
                 .AddNotifications();
 
             services.Configure<FrontendSettings>(configuration.GetSection(FrontendSettings.SectionName));
+
+            services.Configure<CloudinarySettings>(configuration.GetSection(CloudinarySettings.SectionName));
+
+            services.AddScoped<IFileStorageService, CloudinaryFileStorageService>();
 
             return services;
         }
