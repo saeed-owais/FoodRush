@@ -6,4 +6,5 @@ public sealed class FrontendSettings
     public string BaseUrl { get; set; } = default!;
     public string ResetPasswordUrl { get; set; } = default!;
     public string EmailVerificationUrl { get; set; } = default!;
+    public string ChangeEmailUrl { get; set; } = default!;
 }

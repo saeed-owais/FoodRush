@@ -190,6 +190,8 @@ namespace FoodRush.Infrastructure
 
             services.AddScoped<IPasswordResetTokenProvider, PasswordResetTokenProvider>();
 
+            services.AddScoped<IEmailChangeTokenProvider, EmailChangeTokenProvider>();
+
             //services.AddKeyedScoped<IEmailService, FakeEmailService>("FakeEmailService");
 
             services.AddScoped<IEmailService, FakeEmailService>();
