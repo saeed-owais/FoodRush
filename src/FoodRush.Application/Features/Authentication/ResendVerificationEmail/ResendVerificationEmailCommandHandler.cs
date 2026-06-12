@@ -44,7 +44,11 @@ internal sealed class ResendVerificationEmailCommandHandler
                 Error.Conflict("User.EmailAlreadyVerified", "User's email is already verified"));
         }
 
-        var token = tokenProvider.GenerateToken(user);
+        var token = tokenProvider.GenerateToken(new EmailVerificationTokenPayload
+            (user.Id,
+             user.Email,
+             user.SecurityStamp,
+             DateTime.UtcNow.AddHours(1)));
 
         string verificationLink =
             $"{_frontendSettings.EmailVerificationUrl}?token={Uri.EscapeDataString(token)}";

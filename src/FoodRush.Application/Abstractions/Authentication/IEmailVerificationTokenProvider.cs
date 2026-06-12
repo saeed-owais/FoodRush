@@ -1,10 +1,8 @@
-﻿using FoodRush.Domain.Entities.Identity;
-
-namespace FoodRush.Application.Abstractions.Authentication;
+﻿namespace FoodRush.Application.Abstractions.Authentication;
 
 public interface IEmailVerificationTokenProvider
 {
-    string GenerateToken(User user);
+    string GenerateToken(EmailVerificationTokenPayload payload);
 
     EmailVerificationTokenPayload? ValidateToken(string token);
 }
