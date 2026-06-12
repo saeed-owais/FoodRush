@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using SendGrid;
 using System.Security.Claims;
 using System.Text;
 
@@ -35,7 +36,7 @@ namespace FoodRush.Infrastructure
                 .AddBackgroundJobs(connectionString)
                 .AddAuthorization()
                 .AddJwtAuthorization()
-                .AddNotifications();
+                .AddNotifications(configuration);
 
             services.Configure<FrontendSettings>(configuration.GetSection(FrontendSettings.SectionName));
 
@@ -189,7 +190,7 @@ namespace FoodRush.Infrastructure
             return services;
         }
 
-        public static IServiceCollection AddNotifications(this IServiceCollection services)
+        public static IServiceCollection AddNotifications(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddDataProtection();
 
@@ -204,6 +205,19 @@ namespace FoodRush.Infrastructure
             services.AddScoped<IEmailService, FakeEmailService>();
 
             services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+
+            services.AddScoped<IEmailService, SendGridEmailService>();
+
+            services.Configure<SendGridSettings>(configuration.GetSection(SendGridSettings.SectionName));
+
+            SendGridSettings sendGridSettings =
+                configuration
+                    .GetSection(SendGridSettings.SectionName)
+                    .Get<SendGridSettings>()!;
+
+            services.AddSingleton<ISendGridClient>(
+                new SendGridClient(
+                    sendGridSettings.ApiKey));
 
             return services;
         }
