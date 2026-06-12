@@ -8,6 +8,7 @@ using FoodRush.Infrastructure.Authentication;
 using FoodRush.Infrastructure.Authorization;
 using FoodRush.Infrastructure.BackgroundJobs;
 using FoodRush.Infrastructure.Notifications;
+using FoodRush.Infrastructure.Notifications.Templates;
 using FoodRush.Infrastructure.Persistence;
 using FoodRush.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -201,6 +202,8 @@ namespace FoodRush.Infrastructure
             //services.AddKeyedScoped<IEmailService, FakeEmailService>("FakeEmailService");
 
             services.AddScoped<IEmailService, FakeEmailService>();
+
+            services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
 
             return services;
         }

@@ -15,6 +15,7 @@ internal sealed class ForgotPasswordCommandHandler(
     IApplicationDbContext dbContext,
     IPasswordResetTokenProvider tokenProvider,
     IBackgroundJobService backgroundJobService,
+    IEmailTemplateRenderer emailTemplateRenderer,
     IOptions<FrontendSettings> frontendSettings)
     : IRequestHandler<ForgotPasswordCommand, Result>
 {
@@ -44,15 +45,13 @@ internal sealed class ForgotPasswordCommandHandler(
 
         string resetLink = $"{frontendSettings.Value.ResetPasswordUrl}?token={Uri.EscapeDataString(token)}";
 
+        string emailBody = emailTemplateRenderer.RenderResetPassword(resetLink);
+
         backgroundJobService.Enqueue<IEmailService>(emailService =>
-            emailService.SendAsync(user.Email, "Password Reset",
-            $"""
-            Please click the following link to reset your password:
-
-            {resetLink}
-
-            If you did not request a password reset, you can safely ignore this email.
-            """));
+            emailService.SendAsync(
+                to: user.Email,
+                subject: "Password Reset",
+                body: emailBody));
 
         return Result.Success();
     }

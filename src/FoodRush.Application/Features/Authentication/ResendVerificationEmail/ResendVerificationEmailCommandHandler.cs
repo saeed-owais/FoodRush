@@ -17,6 +17,7 @@ internal sealed class ResendVerificationEmailCommandHandler
     IApplicationDbContext dbContext,
     IEmailVerificationTokenProvider tokenProvider,
     IBackgroundJobService backgroundJobService,
+    IEmailTemplateRenderer emailTemplateRenderer,
     IOptions<FrontendSettings> options
     )
     : IRequestHandler<ResendVerificationEmailCommand, Result>
@@ -48,11 +49,12 @@ internal sealed class ResendVerificationEmailCommandHandler
         string verificationLink =
             $"{_frontendSettings.EmailVerificationUrl}?token={Uri.EscapeDataString(token)}";
 
+        string emailBody = emailTemplateRenderer.RenderVerifyEmail(verificationLink);
 
         backgroundJobService.Enqueue<IEmailService>(emailService => emailService.SendAsync(
-            user.Email,
-            "Verify Your Email",
-            $"Please click the following link to verify your email: {verificationLink}"
+            to: user.Email,
+            subject: "Verify Your Email",
+            body: emailBody
             ));
 
         return Result.Success();

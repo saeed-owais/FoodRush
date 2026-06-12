@@ -18,6 +18,7 @@ internal sealed class ChangeEmailCommandHandler
     IUserContext userContext,
     IBackgroundJobService backgroundJobService,
     IEmailChangeTokenProvider tokenProvider,
+    IEmailTemplateRenderer emailTemplateRenderer,
     IOptions<FrontendSettings> options
 ) : IRequestHandler<ChangeEmailCommand, Result>
 {
@@ -84,16 +85,12 @@ internal sealed class ChangeEmailCommandHandler
 
         string confirmationLink = $"{_frontendSettings.ChangeEmailUrl}?token={Uri.EscapeDataString(token)}";
 
+        string emailBody = emailTemplateRenderer.RenderChangeEmail(confirmationLink);
+
         backgroundJobService.Enqueue<IEmailService>(
             emailService => emailService.SendAsync(to: request.NewEmail,
                 subject: "Confirm your email change",
-                body: $"""
-                      Please confirm your email change by clicking the following link:
-
-                      {confirmationLink}
-
-                      If you didn't request this change, you can safely ignore this email.
-                      """
+                body: emailBody
             ));
 
         return Result.Success();
