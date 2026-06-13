@@ -50,7 +50,7 @@ public static class DependencyInjection
 
         services.AddStackExchangeRedisCache(options =>
         {
-            options.Configuration = configuration.GetConnectionString("Redis");
+            options.Configuration = redisConnectionString;
         });
 
         services.AddHybridCache(options =>

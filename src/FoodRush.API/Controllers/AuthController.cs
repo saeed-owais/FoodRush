@@ -163,7 +163,7 @@ namespace FoodRush.API.Controllers
         }
 
         [Authorize]
-        [HttpDelete("sessions/{sessionId:guid}")]
+        [HttpPost("revoke-session/{sessionId:guid}")]
         public async Task<IActionResult> RevokeSession(Guid sessionId, CancellationToken cancellationToken)
         {
             RevokeSessionCommand command =
