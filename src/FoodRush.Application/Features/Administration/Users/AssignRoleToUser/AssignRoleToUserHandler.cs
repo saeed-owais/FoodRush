@@ -5,12 +5,14 @@ using FoodRush.Application.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FoodRush.Application.Features.Administration.Users.AssignRoleToUser;
 
 internal sealed class AssignRoleToUserHandler
     (IApplicationDbContext dbContext,
-    IUserSecurityStampService securityStampService)
+    IUserSecurityStampService securityStampService,
+    ILogger<AssignRoleToUserHandler> logger)
     : IRequestHandler<AssignRoleToUserCommand, Result>
 {
     public async Task<Result> Handle(AssignRoleToUserCommand request, CancellationToken cancellationToken)
@@ -44,26 +46,52 @@ internal sealed class AssignRoleToUserHandler
                 RoleErrors.AlreadyAssignedToUser(request.RoleId, request.UserId));
         }
 
-        await dbContext.UserRoles
-            .AddAsync(new UserRole
-            {
-                UserId = request.UserId,
-                RoleId = request.RoleId,
-            }, cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         string securityStamp = Guid.NewGuid().ToString();
+        try
+        {
+            await dbContext.UserRoles
+                .AddAsync(new UserRole
+                {
+                    UserId = request.UserId,
+                    RoleId = request.RoleId,
+                }, cancellationToken);
 
-        await dbContext.Users
-        .Where(u => u.Id == request.UserId)
-        .ExecuteUpdateAsync(
-            u => u.SetProperty(
-                user => user.SecurityStamp,
-                securityStamp),
-            cancellationToken);
+            await dbContext.Users
+            .Where(u => u.Id == request.UserId)
+            .ExecuteUpdateAsync(
+                u => u.SetProperty(
+                    user => user.SecurityStamp,
+                    securityStamp),
+                cancellationToken);
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
-        await securityStampService.SetAsync(request.UserId, securityStamp, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "An error occurred while assigning role {RoleId} to user {UserId}",
+                request.RoleId,
+                request.UserId);
+
+            throw;
+        }
+
+        try
+        {
+            await securityStampService.SetAsync(request.UserId, securityStamp, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Failed to update security stamp for user {UserId}",
+                request.UserId);
+        }
 
         return Result.Success();
     }

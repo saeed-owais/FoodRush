@@ -1,5 +1,6 @@
 ﻿using FoodRush.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace FoodRush.Application.Abstractions.Persistence
 {
@@ -20,6 +21,9 @@ namespace FoodRush.Application.Abstractions.Persistence
         public DbSet<RefreshToken> RefreshTokens { get; }
 
         public DbSet<OtpRequest> OtpRequests { get; }
+
+        public DatabaseFacade Database { get; }
+
         Task<int> SaveChangesAsync(
             CancellationToken cancellationToken = default);
     }

@@ -5,6 +5,7 @@ using FoodRush.Application.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FoodRush.Application.Features.Authentication.ChangePassword;
 
@@ -15,7 +16,8 @@ internal sealed class ChangePasswordCommandHandler
     IUserContext userContext,
     ICurrentRequestInfo currentRequestInfo,
     IRefreshTokenService refreshTokenService,
-    IUserSecurityStampService securityStampService
+    IUserSecurityStampService securityStampService,
+    ILogger<ChangePasswordCommandHandler> logger
 ) : IRequestHandler<ChangePasswordCommand, Result>
 {
     public async Task<Result> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
@@ -43,17 +45,45 @@ internal sealed class ChangePasswordCommandHandler
             return Result.Failure(AuthErrors.SamePassword);
         }
 
-        user.PasswordHash = passwordHasher.Hash(request.NewPassword);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        user.SecurityStamp = Guid.NewGuid().ToString();
+        var securityStamp = Guid.NewGuid().ToString();
 
-        DateTime dateTime = DateTime.UtcNow;
+        try
+        {
+            user.PasswordHash = passwordHasher.Hash(request.NewPassword);
 
-        await refreshTokenService.RevokeAllAsync(user.Id, currentRequestInfo.IpAddress, dateTime, cancellationToken);
+            user.SecurityStamp = securityStamp;
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+            DateTime dateTime = DateTime.UtcNow;
 
-        await securityStampService.SetAsync(user.Id, user.SecurityStamp, cancellationToken);
+            await refreshTokenService.RevokeAllAsync(user.Id, currentRequestInfo.IpAddress, dateTime, cancellationToken);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "An error occurred while changing the password for user {UserId}",
+                userContext.UserId);
+
+            throw;
+        }
+
+        try
+        {
+            await securityStampService.SetAsync(user.Id, user.SecurityStamp, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "An error occurred while updating the security stamp for user {UserId}",
+                userContext.UserId);
+        }
 
         return Result.Success();
     }

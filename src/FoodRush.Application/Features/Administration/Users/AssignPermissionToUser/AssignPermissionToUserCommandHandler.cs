@@ -5,12 +5,14 @@ using FoodRush.Application.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FoodRush.Application.Features.Administration.Users.AssignPermissionToUser;
 
 internal sealed class AssignPermissionToUserCommandHandler
     (IApplicationDbContext _dbContext,
-    IUserSecurityStampService securityStampService)
+    IUserSecurityStampService securityStampService,
+    ILogger<AssignPermissionToUserCommandHandler> logger)
     : IRequestHandler<AssignPermissionToUserCommand, Result>
 {
     public async Task<Result> Handle(AssignPermissionToUserCommand request, CancellationToken cancellationToken)
@@ -45,21 +47,52 @@ internal sealed class AssignPermissionToUserCommandHandler
             PermissionId = request.PermissionId
         };
 
-        await _dbContext.UserPermissions.AddAsync(userPermission, cancellationToken);
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         string newSecurityStamp = Guid.NewGuid().ToString();
+        try
+        {
+            await _dbContext.UserPermissions.AddAsync(userPermission, cancellationToken);
 
-        await _dbContext.Users
-            .Where(u => u.Id == request.UserId)
-            .ExecuteUpdateAsync(
-                u => u.SetProperty(
-                    user => user.SecurityStamp,
-                    newSecurityStamp),
+            await _dbContext.Users
+                .Where(u => u.Id == request.UserId)
+                .ExecuteUpdateAsync(
+                    u => u.SetProperty(
+                        user => user.SecurityStamp,
+                        newSecurityStamp),
+                    cancellationToken);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Failed to assign permission {PermissionId} to user {UserId}",
+                request.PermissionId,
+                request.UserId);
+
+            await transaction.RollbackAsync(cancellationToken);
+
+            throw;
+        }
+
+        try
+        {
+            await securityStampService.SetAsync(
+                request.UserId,
+                newSecurityStamp,
                 cancellationToken);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        await securityStampService.SetAsync(request.UserId, newSecurityStamp, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Failed to update security stamp cache for user {UserId}",
+                request.UserId);
+        }
 
         return Result.Success();
     }

@@ -5,6 +5,7 @@ using FoodRush.Application.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FoodRush.Application.Features.Authentication.ConfirmEmailChange;
 
@@ -14,7 +15,8 @@ internal sealed class ConfirmEmailChangeCommandHandler
     IEmailChangeTokenProvider tokenProvider,
     ICurrentRequestInfo currentRequestInfo,
     IRefreshTokenService refreshTokenService,
-    IUserSecurityStampService securityStampService
+    IUserSecurityStampService securityStampService,
+    ILogger<ConfirmEmailChangeCommandHandler> logger
 ) : IRequestHandler<ConfirmEmailChangeCommand, Result>
 
 {
@@ -51,23 +53,50 @@ internal sealed class ConfirmEmailChangeCommandHandler
             return Result.Failure(UserErrors.EmailAlreadyExists);
         }
 
-        user.Email = payload.NewEmail;
-
-        user.NormalizedEmail = normalizedEmail;
-
-        user.IsEmailVerified = true;
-
         user.SecurityStamp = Guid.NewGuid().ToString();
 
-        await refreshTokenService.RevokeAllAsync(
-            user.Id,
-            currentRequestInfo.IpAddress,
-            DateTime.UtcNow,
-            cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            user.Email = payload.NewEmail;
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+            user.NormalizedEmail = normalizedEmail;
 
-        await securityStampService.SetAsync(user.Id, user.SecurityStamp, cancellationToken);
+            user.IsEmailVerified = true;
+
+
+            await refreshTokenService.RevokeAllAsync(
+                user.Id,
+                currentRequestInfo.IpAddress,
+                DateTime.UtcNow,
+                cancellationToken);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Error occurred while confirming email change for user {UserId}",
+                user.Id);
+
+            throw;
+        }
+
+        try
+        {
+            await securityStampService.SetAsync(user.Id, user.SecurityStamp, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+
+            logger.LogWarning(
+                ex,
+                "Error occurred while updating security stamp for user {UserId}",
+                user.Id);
+        }
 
         return Result.Success();
 

@@ -5,6 +5,7 @@ using FoodRush.Application.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FoodRush.Application.Features.Authentication.ResetPassword;
 
@@ -15,7 +16,8 @@ internal sealed class ResetPasswordCommandHandler
     IPasswordResetTokenProvider tokenProvider,
     IRefreshTokenService refreshTokenService,
     ICurrentRequestInfo currentRequestInfo,
-    IUserSecurityStampService securityStampService
+    IUserSecurityStampService securityStampService,
+    ILogger<ResetPasswordCommandHandler> logger
 )
     : IRequestHandler<ResetPasswordCommand, Result>
 {
@@ -50,19 +52,45 @@ internal sealed class ResetPasswordCommandHandler
             return Result.Failure(AuthErrors.InvalidPasswordResetToken);
         }
 
-        user.PasswordHash = passwordHasher.Hash(request.NewPassword);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        user.SecurityStamp = Guid.NewGuid().ToString();
+        try
+        {
+            user.PasswordHash = passwordHasher.Hash(request.NewPassword);
 
-        DateTime utcNow = DateTime.UtcNow;
+            user.SecurityStamp = Guid.NewGuid().ToString();
 
-        var revokedByIp = currentRequestInfo.IpAddress;
+            DateTime utcNow = DateTime.UtcNow;
 
-        await refreshTokenService.RevokeAllAsync(user.Id, revokedByIp, utcNow, cancellationToken);
+            var revokedByIp = currentRequestInfo.IpAddress;
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+            await refreshTokenService.RevokeAllAsync(user.Id, revokedByIp, utcNow, cancellationToken);
 
-        await securityStampService.SetAsync(user.Id, user.SecurityStamp, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "An error occurred while resetting the password for user with ID {UserId}.",
+                user.Id);
+
+            throw;
+        }
+
+        try
+        {
+            await securityStampService.SetAsync(user.Id, user.SecurityStamp, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "An error occurred while updating the security stamp for user with ID {UserId}.",
+                user.Id);
+        }
 
         return Result.Success();
     }

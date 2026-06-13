@@ -5,6 +5,7 @@ using FoodRush.Application.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FoodRush.Application.Features.Authentication.Refresh;
 
@@ -13,7 +14,9 @@ internal sealed class RefreshTokenCommandHandler(
     ITokenProvider tokenProvider,
     IRefreshTokenHasher refreshTokenHasher,
     ICurrentRequestInfo currentRequestInfo,
-    IRefreshTokenService refreshTokenService)
+    IRefreshTokenService refreshTokenService,
+    IUserSecurityStampService securityStampService,
+    ILogger<RefreshTokenCommandHandler> logger)
     : IRequestHandler<RefreshTokenCommand, Result<RefreshTokenResponse>>
 {
     public async Task<Result<RefreshTokenResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
@@ -40,15 +43,51 @@ internal sealed class RefreshTokenCommandHandler(
 
         if (refreshTokenEntity.IsUsed || refreshTokenEntity.IsRevoked)
         {
-            await refreshTokenService.RevokeAllAsync(
+            logger.LogWarning(
+                "Refresh token reuse detected. UserId={UserId}, TokenId={TokenId}",
                 refreshTokenEntity.UserId,
-                ipAddress,
-                utcNow,
-                cancellationToken);
+                refreshTokenEntity.Id);
 
-            refreshTokenEntity.User.SecurityStamp = Guid.NewGuid().ToString(); // Invalidate all existing tokens for the user   
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            await dbContext.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await refreshTokenService.RevokeAllAsync(
+                    refreshTokenEntity.UserId,
+                    ipAddress,
+                    utcNow,
+                    cancellationToken);
+
+                refreshTokenEntity.User.SecurityStamp = Guid.NewGuid().ToString(); // Invalidate all existing tokens for the user   
+
+                await dbContext.SaveChangesAsync(cancellationToken);
+
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "An error occurred while revoking tokens for user {UserId}",
+                    refreshTokenEntity.UserId);
+
+                return Unauthorized();
+            }
+
+            try
+            {
+                await securityStampService.SetAsync(
+                    refreshTokenEntity.UserId,
+                    refreshTokenEntity.User.SecurityStamp,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Failed to update security stamp cache for user {UserId}",
+                    refreshTokenEntity.UserId);
+            }
 
             return Unauthorized();
         }

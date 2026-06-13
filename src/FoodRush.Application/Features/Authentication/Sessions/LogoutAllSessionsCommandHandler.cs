@@ -4,6 +4,7 @@ using FoodRush.Application.Common;
 using FoodRush.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FoodRush.Application.Features.Authentication.Sessions.LogoutAllSessions;
 
@@ -11,7 +12,9 @@ internal sealed class LogoutAllSessionsCommandHandler(
     IApplicationDbContext dbContext,
     IUserContext userContext,
     ICurrentRequestInfo currentRequestInfo,
-    IRefreshTokenService refreshTokenService)
+    IRefreshTokenService refreshTokenService,
+    IUserSecurityStampService securityStampService,
+    ILogger<LogoutAllSessionsCommandHandler> logger)
     : IRequestHandler<LogoutAllSessionsCommand, Result>
 {
     public async Task<Result> Handle(
@@ -31,17 +34,45 @@ internal sealed class LogoutAllSessionsCommandHandler(
 
         DateTime utcNow = DateTime.UtcNow;
 
-        user.SecurityStamp =
-            Guid.NewGuid().ToString();
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        await refreshTokenService.RevokeAllAsync(
-            user.Id,
-            currentRequestInfo.IpAddress,
-            utcNow,
-            cancellationToken);
+        try
+        {
+            user.SecurityStamp =
+                Guid.NewGuid().ToString();
 
-        await dbContext.SaveChangesAsync(
-            cancellationToken);
+            await refreshTokenService.RevokeAllAsync(
+                user.Id,
+                currentRequestInfo.IpAddress,
+                utcNow,
+                cancellationToken);
+
+            await dbContext.SaveChangesAsync(
+                cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "An error occurred while logging out all sessions for user {UserId}",
+                userContext.UserId);
+
+            throw;
+        }
+
+        try
+        {
+            await securityStampService.SetAsync(user.Id, user.SecurityStamp, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "An error occurred while updating security stamp for user {UserId}",
+                userContext.UserId);
+        }
 
         return Result.Success();
     }
