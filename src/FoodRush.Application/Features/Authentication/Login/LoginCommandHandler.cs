@@ -30,26 +30,17 @@ internal sealed class LoginCommandHandler(
 
         if (user is null)
         {
-            return Result.Failure<LoginResponse>(
-                Error.Unauthorized(
-                    "Auth.InvalidCredentials",
-                    "Invalid email or password."));
+            return Result.Failure<LoginResponse>(AuthErrors.InvalidCredentials);
         }
 
         if (!user.IsActive)
         {
-            return Result.Failure<LoginResponse>(
-                Error.Unauthorized(
-                    "Auth.AccountDisabled",
-                    "Your account is disabled."));
+            return Result.Failure<LoginResponse>(AuthErrors.AccountDisabled);
         }
 
         if (!user.IsEmailVerified)
         {
-            return Result.Failure<LoginResponse>(
-                Error.Conflict(
-                    "Auth.EmailNotVerified",
-                    "Please verify your email before signing in."));
+            return Result.Failure<LoginResponse>(AuthErrors.EmailNotVerified);
         }
 
         DateTime utcNow = DateTime.UtcNow;
@@ -59,9 +50,7 @@ internal sealed class LoginCommandHandler(
         {
             TimeSpan lockoutTimeRemaining = user.LockoutEnd.Value - utcNow;
             return Result.Failure<LoginResponse>(
-                Error.Unauthorized(
-                    "Auth.AccountLocked",
-                    $"Your account is locked. Try again in {lockoutTimeRemaining.TotalMinutes} minutes and {lockoutTimeRemaining.Seconds} seconds."));
+                AuthErrors.AccountLocked(lockoutTimeRemaining.TotalMinutes, lockoutTimeRemaining.Seconds));
         }
 
         bool isPasswordValid = passwordHasher.Verify(
@@ -79,10 +68,7 @@ internal sealed class LoginCommandHandler(
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return Result.Failure<LoginResponse>(
-                Error.Unauthorized(
-                    "Auth.InvalidCredentials",
-                    "Invalid email or password."));
+            return Result.Failure<LoginResponse>(AuthErrors.InvalidCredentials);
         }
 
 

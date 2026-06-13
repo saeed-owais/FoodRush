@@ -20,14 +20,12 @@ internal sealed class RestoreUserCommandHandler
 
         if (user == null)
         {
-            return Result.Failure(
-                Error.NotFound("User.NotFound", $"User with ID {request.UserId} was not found"));
+            return Result.Failure(UserErrors.NotFound(request.UserId));
         }
 
         if (!user.IsDeleted)
         {
-            return Result.Failure(
-                Error.Conflict("User.NotDeleted", $"User with ID {request.UserId} is not deleted"));
+            return Result.Failure(UserErrors.NotDeleted(request.UserId));
         }
 
         user.IsDeleted = false;

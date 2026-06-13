@@ -10,7 +10,8 @@ namespace FoodRush.Application.Features.Authentication.Sessions.LogoutAllSession
 internal sealed class LogoutAllSessionsCommandHandler(
     IApplicationDbContext dbContext,
     IUserContext userContext,
-    ICurrentRequestInfo currentRequestInfo)
+    ICurrentRequestInfo currentRequestInfo,
+    IRefreshTokenService refreshTokenService)
     : IRequestHandler<LogoutAllSessionsCommand, Result>
 {
     public async Task<Result> Handle(
@@ -30,24 +31,14 @@ internal sealed class LogoutAllSessionsCommandHandler(
 
         DateTime utcNow = DateTime.UtcNow;
 
-        List<RefreshToken> sessions =
-            await dbContext.RefreshTokens
-                .AsTracking()
-                .Where(rt =>
-                    rt.UserId == userContext.UserId &&
-                    rt.IsActive)
-                .ToListAsync(cancellationToken);
-
-        foreach (RefreshToken session in sessions)
-        {
-            session.RevokedAt = utcNow;
-
-            session.RevokedByIp =
-                currentRequestInfo.IpAddress;
-        }
-
         user.SecurityStamp =
             Guid.NewGuid().ToString();
+
+        await refreshTokenService.RevokeAllAsync(
+            user.Id,
+            currentRequestInfo.IpAddress,
+            utcNow,
+            cancellationToken);
 
         await dbContext.SaveChangesAsync(
             cancellationToken);

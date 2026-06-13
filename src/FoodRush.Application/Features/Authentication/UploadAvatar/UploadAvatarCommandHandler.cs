@@ -24,8 +24,7 @@ internal sealed class UploadAvatarCommandHandler
 
         if (user == null)
         {
-            return Result.Failure<UploadAvatarResponse>(
-                Error.NotFound("User.NotFound", $"User with ID {userContext.UserId} not found."));
+            return Result.Failure<UploadAvatarResponse>(UserErrors.NotFound(userContext.UserId));
         }
 
         string publicId = $"avatars/{user.Id}";

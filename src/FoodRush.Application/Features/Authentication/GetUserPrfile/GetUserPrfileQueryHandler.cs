@@ -16,6 +16,7 @@ internal sealed class GetUserPrfileQueryHandler
     public async Task<Result<GetUserProfileResponse>> Handle(GetUserPrfileQuery request, CancellationToken cancellationToken)
     {
         var userData = await dbContext.Users
+            .AsNoTracking()
             .Select(u => new
             {
 
@@ -43,7 +44,7 @@ internal sealed class GetUserPrfileQueryHandler
         if (userData is null)
         {
             return Result.Failure<GetUserProfileResponse>(
-                Error.NotFound("User.NotFound", $"User with ID {userContext.UserId} not found.")
+               UserErrors.NotFound(userContext.UserId)
                 );
         }
 

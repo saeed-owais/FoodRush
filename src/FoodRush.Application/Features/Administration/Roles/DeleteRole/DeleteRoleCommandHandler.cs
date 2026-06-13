@@ -21,10 +21,7 @@ internal sealed class DeleteRoleCommandHandler
 
         if (role == null)
         {
-            return Result.Failure(
-                 Error.NotFound(
-                     "Role.NotFound",
-                     $"Role with id '{request.Id}' was not found."));
+            return Result.Failure(RoleErrors.NotFound(request.Id));
         }
 
         _dbContext.Roles.Remove(role);

@@ -12,7 +12,8 @@ internal sealed class RefreshTokenCommandHandler(
     IApplicationDbContext dbContext,
     ITokenProvider tokenProvider,
     IRefreshTokenHasher refreshTokenHasher,
-    ICurrentRequestInfo currentRequestInfo)
+    ICurrentRequestInfo currentRequestInfo,
+    IRefreshTokenService refreshTokenService)
     : IRequestHandler<RefreshTokenCommand, Result<RefreshTokenResponse>>
 {
     public async Task<Result<RefreshTokenResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
@@ -39,7 +40,11 @@ internal sealed class RefreshTokenCommandHandler(
 
         if (refreshTokenEntity.IsUsed || refreshTokenEntity.IsRevoked)
         {
-            await RevokeAllUserTokens(refreshTokenEntity.UserId, ipAddress, cancellationToken);
+            await refreshTokenService.RevokeAllAsync(
+                refreshTokenEntity.UserId,
+                ipAddress,
+                utcNow,
+                cancellationToken);
 
             refreshTokenEntity.User.SecurityStamp = Guid.NewGuid().ToString(); // Invalidate all existing tokens for the user   
 
@@ -57,18 +62,12 @@ internal sealed class RefreshTokenCommandHandler(
 
         if (!user.IsActive)
         {
-            return Result.Failure<RefreshTokenResponse>(
-                Error.Unauthorized(
-                "Auth.UserInactive",
-                "The user account is inactive."));
+            return Result.Failure<RefreshTokenResponse>(AuthErrors.UserInactive);
         }
 
         if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > utcNow)
         {
-            return Result.Failure<RefreshTokenResponse>(
-                Error.Unauthorized(
-                "Auth.UserLockedOut",
-                $"The user account is locked until {user.LockoutEnd.Value:u}."));
+            return Result.Failure<RefreshTokenResponse>(AuthErrors.UserLockedOut(user.LockoutEnd.Value - utcNow));
         }
 
         IEnumerable<string> roles = await dbContext.UserRoles
@@ -129,30 +128,8 @@ internal sealed class RefreshTokenCommandHandler(
             ));
     }
 
-    private async Task RevokeAllUserTokens(Guid userId, string? ipAddress, CancellationToken cancellationToken)
-    {
-        DateTime utcNow = DateTime.UtcNow;
-        List<RefreshToken> activeTokens = await dbContext.RefreshTokens
-            .AsTracking()
-            .Where(rt =>
-                rt.UserId == userId &&
-                rt.RevokedAt == null &&
-                rt.UsedAt == null &&
-                rt.ExpiresAt > utcNow)
-            .ToListAsync(cancellationToken);
-
-        foreach (RefreshToken token in activeTokens)
-        {
-            token.RevokedAt = utcNow;
-            token.RevokedByIp = ipAddress;
-        }
-    }
-
     private static Result<RefreshTokenResponse> Unauthorized()
     {
-        return Result.Failure<RefreshTokenResponse>(
-            Error.Unauthorized(
-            "Auth.InvalidRefreshToken",
-            "The provided refresh token is invalid."));
+        return Result.Failure<RefreshTokenResponse>(AuthErrors.InvalidRefreshToken);
     }
 }

@@ -17,10 +17,7 @@ internal sealed class CreateRoleCommandHandler
 
         if (roleExists)
         {
-            return Result.Failure<CreateRoleResponse>(
-                Error.Conflict(
-                    "Role.AlreadyExists",
-                    $"Role with code '{request.Code}' already exists."));
+            return Result.Failure<CreateRoleResponse>(RoleErrors.AlreadyExists(request.Code));
         }
 
         Role newRole = new Role

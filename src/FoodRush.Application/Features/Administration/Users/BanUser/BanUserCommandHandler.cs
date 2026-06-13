@@ -17,10 +17,7 @@ internal sealed class BanUserCommandHandler
 
         if (request.BanEndDate <= utcNow)
         {
-            return Result.Failure(
-                Error.Validation(
-                    "Ban.InvalidDate",
-                    "Ban end date must be in the future."));
+            return Result.Failure(UserErrors.InvalidBanDate);
         }
 
         User? user = await dbContext.Users
@@ -29,18 +26,12 @@ internal sealed class BanUserCommandHandler
 
         if (user == null)
         {
-            return Result.Failure(
-                Error.NotFound("User.NotFound", $"User with ID {request.UserId} was not found.")
-                );
+            return Result.Failure(UserErrors.NotFound(request.UserId));
         }
 
         if (user.LockoutEnd > utcNow)
         {
-            return Result.Failure(
-                Error.Conflict(
-                    "User.AlreadyBanned",
-                    $"User with ID {request.UserId} is already banned until {user.LockoutEnd}.")
-                );
+            return Result.Failure(UserErrors.AlreadyBanned(request.UserId, utcNow));
         }
 
         user.LockoutEnd = request.BanEndDate;

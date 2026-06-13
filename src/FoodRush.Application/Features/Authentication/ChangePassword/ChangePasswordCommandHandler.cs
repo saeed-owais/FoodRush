@@ -12,7 +12,9 @@ internal sealed class ChangePasswordCommandHandler
 (
     IApplicationDbContext dbContext,
     IPasswordHasher passwordHasher,
-    IUserContext userContext
+    IUserContext userContext,
+    ICurrentRequestInfo currentRequestInfo,
+    IRefreshTokenService refreshTokenService
 ) : IRequestHandler<ChangePasswordCommand, Result>
 {
     public async Task<Result> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
@@ -23,27 +25,21 @@ internal sealed class ChangePasswordCommandHandler
 
         if (user == null)
         {
-            return Result.Failure(
-                Error.Unauthorized("Auth.Unauthorized", $"User with ID {userContext.UserId} is not authorized.")
-            );
+            return Result.Failure(UserErrors.NotFound(userContext.UserId));
         }
 
         bool isOldPasswordValid = passwordHasher.Verify(request.OldPassword, user.PasswordHash);
 
         if (!isOldPasswordValid)
         {
-            return Result.Failure(
-                Error.Validation("Auth.InvalidPassword", "The provided old password is incorrect.")
-            );
+            return Result.Failure(AuthErrors.InvalidPassword);
         }
 
         bool samePassword = passwordHasher.Verify(request.NewPassword, user.PasswordHash);
 
         if (samePassword)
         {
-            return Result.Failure(
-                Error.Validation("User.SamePassword", "The new password must be different from the old password.")
-            );
+            return Result.Failure(AuthErrors.SamePassword);
         }
 
         user.PasswordHash = passwordHasher.Hash(request.NewPassword);
@@ -52,12 +48,7 @@ internal sealed class ChangePasswordCommandHandler
 
         DateTime dateTime = DateTime.UtcNow;
 
-        await dbContext.RefreshTokens
-            .Where(rt => rt.UserId == user.Id && rt.RevokedAt == null)
-            .ExecuteUpdateAsync(
-               s => s.SetProperty(rt => rt.RevokedAt, dateTime),
-                cancellationToken
-            );
+        await refreshTokenService.RevokeAllAsync(user.Id, currentRequestInfo.IpAddress, dateTime, cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 

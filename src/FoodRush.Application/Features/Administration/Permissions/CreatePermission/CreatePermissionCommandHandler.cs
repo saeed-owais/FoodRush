@@ -22,10 +22,7 @@ internal sealed class CreatePermissionCommandHandler
         {
             if (!permission.IsDeleted)
             {
-                return Result.Failure<CreatePermissionResponse>(
-                    Error.Conflict(
-                        "Permission.AlreadyExists",
-                        $"Permission with code '{request.Code}' already exists ."));
+                return Result.Failure<CreatePermissionResponse>(PermissionErrors.AlreadyExists(request.Code));
             }
 
             permission.IsDeleted = false;

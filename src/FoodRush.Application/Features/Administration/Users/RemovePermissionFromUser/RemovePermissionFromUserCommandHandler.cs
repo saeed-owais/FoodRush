@@ -18,7 +18,7 @@ internal sealed class RemovePermissionFromUserCommandHandler
 
         if (!userExists)
         {
-            return Result.Failure(Error.NotFound("User.NotFound", $"User with ID {request.UserId} not found."));
+            return Result.Failure(UserErrors.NotFound(request.UserId));
         }
 
         bool permissionExists = await dbContext.Permissions
@@ -26,7 +26,7 @@ internal sealed class RemovePermissionFromUserCommandHandler
 
         if (!permissionExists)
         {
-            return Result.Failure(Error.NotFound("Permission.NotFound", $"Permission with ID {request.PermissionId} not found."));
+            return Result.Failure(PermissionErrors.NotFound(request.PermissionId));
         }
 
         UserPermission? userPermission = await dbContext.UserPermissions

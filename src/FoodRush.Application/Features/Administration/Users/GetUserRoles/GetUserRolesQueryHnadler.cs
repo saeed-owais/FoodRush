@@ -30,7 +30,7 @@ internal sealed class GetUserRolesQueryHnadler
         if (user == null)
         {
             return Result.Failure<IReadOnlyCollection<GetUserRoleResponse>>(
-                Error.NotFound("User.NotFound", $"User with ID {request.UserId} was not found"));
+                UserErrors.NotFound(request.UserId));
         }
 
         IReadOnlyCollection<GetUserRoleResponse> roles = user.Roles.AsReadOnly();

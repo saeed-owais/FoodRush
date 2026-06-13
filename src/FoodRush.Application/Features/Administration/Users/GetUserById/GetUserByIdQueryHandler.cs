@@ -60,7 +60,7 @@ internal sealed class GetUserByIdQueryHandler
 
         if (user == null)
         {
-            return Result.Failure<GetUserByIdResponse>(Error.NotFound("User.NotFound", $"User with ID {request.UserId} not found."));
+            return Result.Failure<GetUserByIdResponse>(UserErrors.NotFound(request.UserId));
         }
 
         return Result.Success(user);

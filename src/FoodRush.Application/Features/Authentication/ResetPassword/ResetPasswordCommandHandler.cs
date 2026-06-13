@@ -12,14 +12,12 @@ internal sealed class ResetPasswordCommandHandler
 (
     IApplicationDbContext dbContext,
     IPasswordHasher passwordHasher,
-    IPasswordResetTokenProvider tokenProvider
+    IPasswordResetTokenProvider tokenProvider,
+    IRefreshTokenService refreshTokenService,
+    ICurrentRequestInfo currentRequestInfo
 )
     : IRequestHandler<ResetPasswordCommand, Result>
 {
-    private static readonly Error InvalidToken =
-        Error.Validation(
-            "PasswordReset.InvalidToken",
-            "The password reset token is invalid or expired.");
 
     public async Task<Result> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
@@ -27,7 +25,7 @@ internal sealed class ResetPasswordCommandHandler
 
         if (payload is null)
         {
-            return Result.Failure(InvalidToken);
+            return Result.Failure(AuthErrors.InvalidPasswordResetToken);
         }
 
         User? user = await dbContext.Users
@@ -36,19 +34,19 @@ internal sealed class ResetPasswordCommandHandler
 
         if (user is null)
         {
-            return Result.Failure(InvalidToken);
+            return Result.Failure(AuthErrors.InvalidPasswordResetToken);
         }
 
         bool isEmailMatch = string.Equals(user.Email, payload.Email, StringComparison.OrdinalIgnoreCase);
 
         if (!isEmailMatch)
         {
-            return Result.Failure(InvalidToken);
+            return Result.Failure(AuthErrors.InvalidPasswordResetToken);
         }
 
         if (user.SecurityStamp != payload.SecurityStamp)
         {
-            return Result.Failure(InvalidToken);
+            return Result.Failure(AuthErrors.InvalidPasswordResetToken);
         }
 
         user.PasswordHash = passwordHasher.Hash(request.NewPassword);
@@ -57,15 +55,9 @@ internal sealed class ResetPasswordCommandHandler
 
         DateTime utcNow = DateTime.UtcNow;
 
-        await dbContext.RefreshTokens
-            .Where(rt =>
-                rt.UserId == user.Id &&
-                rt.RevokedAt == null)
-            .ExecuteUpdateAsync(
-                setters => setters.SetProperty(
-                    rt => rt.RevokedAt,
-                    utcNow),
-                cancellationToken);
+        var revokedByIp = currentRequestInfo.IpAddress;
+
+        await refreshTokenService.RevokeAllAsync(user.Id, revokedByIp, utcNow, cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 

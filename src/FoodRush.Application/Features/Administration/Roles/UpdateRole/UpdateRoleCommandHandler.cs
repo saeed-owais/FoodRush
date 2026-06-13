@@ -19,10 +19,7 @@ internal sealed class UpdateRoleCommandHandler
 
         if (role == null)
         {
-            return Result.Failure<UpdateRoleResponse>(
-                Error.NotFound(
-                    "Role.NotFound",
-                    $"Role with ID {request.Id} not found."));
+            return Result.Failure<UpdateRoleResponse>(RoleErrors.NotFound(request.Id));
         }
 
         bool codeExists = await _dbContext.Roles
@@ -33,10 +30,7 @@ internal sealed class UpdateRoleCommandHandler
 
         if (codeExists)
         {
-            return Result.Failure<UpdateRoleResponse>(
-                Error.Conflict(
-                    "Role.CodeAlreadyExists",
-                    $"Role with code '{request.Code}' already exists."));
+            return Result.Failure<UpdateRoleResponse>(RoleErrors.AlreadyExists(request.Code));
         }
 
         role.Name = request.Name;

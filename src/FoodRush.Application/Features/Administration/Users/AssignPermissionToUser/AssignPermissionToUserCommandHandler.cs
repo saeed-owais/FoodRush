@@ -18,10 +18,7 @@ internal sealed class AssignPermissionToUserCommandHandler
 
         if (!userExists)
         {
-            return Result.Failure(
-                Error.NotFound(
-                    "User.NotFound",
-                    $"User with ID {request.UserId} not found."));
+            return Result.Failure(UserErrors.NotFound(request.UserId));
         }
 
         bool permissionExists = await _dbContext.Permissions
@@ -29,10 +26,7 @@ internal sealed class AssignPermissionToUserCommandHandler
 
         if (!permissionExists)
         {
-            return Result.Failure(
-                Error.NotFound(
-                    "Permission.NotFound",
-                    $"Permission with ID {request.PermissionId} not found."));
+            return Result.Failure(PermissionErrors.NotFound(request.PermissionId));
         }
 
         bool alreadyAssigned = await _dbContext.UserPermissions
@@ -40,10 +34,7 @@ internal sealed class AssignPermissionToUserCommandHandler
 
         if (alreadyAssigned)
         {
-            return Result.Failure(
-                Error.Conflict(
-                    "Permission.AlreadyAssigned",
-                    $"Permission with ID {request.PermissionId} is already assigned to user with ID {request.UserId}."));
+            return Result.Failure(PermissionErrors.AlreadyAssignedToUser(request.PermissionId, request.UserId));
         }
 
         UserPermission userPermission = new()

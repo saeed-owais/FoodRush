@@ -31,18 +31,12 @@ internal sealed class ChangeEmailCommandHandler
 
         if (user is null)
         {
-            return Result.Failure(
-                Error.NotFound(
-                    "User.NotFound",
-                    $"User with ID {userContext.UserId} was not found."));
+            return Result.Failure(UserErrors.NotFound(userContext.UserId));
         }
 
         if (!user.IsEmailVerified)
         {
-            return Result.Failure(
-                Error.Conflict(
-                    "Auth.EmailNotVerified",
-                    "Current email must be verified."));
+            return Result.Failure(AuthErrors.EmailNotVerified);
         }
 
         string normalizedEmail = request.NewEmail.Trim().ToUpperInvariant();
@@ -55,10 +49,7 @@ internal sealed class ChangeEmailCommandHandler
 
         if (emailAlreadyExists)
         {
-            return Result.Failure(
-                Error.Conflict(
-                    "Email.AlreadyExists",
-                    "Email is already in use."));
+            return Result.Failure(UserErrors.EmailAlreadyExists);
         }
 
 
@@ -69,10 +60,7 @@ internal sealed class ChangeEmailCommandHandler
 
         if (isSameEmail)
         {
-            return Result.Failure(
-                Error.Validation(
-                    "Email.SameEmail",
-                    "The new email must be different from the current email."));
+            return Result.Failure(AuthErrors.SameEmail);
         }
 
         string token =

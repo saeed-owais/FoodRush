@@ -21,10 +21,7 @@ internal sealed class DeleteUserCommandHnadler
 
         if (user is null)
         {
-            return Result.Failure(
-                Error.NotFound(
-                    "User.NotFound",
-                    $"User with ID {request.UserId} was not found."));
+            return Result.Failure(UserErrors.NotFound(request.UserId));
         }
 
         bool isSuperAdmin = await dbContext.UserRoles
@@ -44,10 +41,7 @@ internal sealed class DeleteUserCommandHnadler
 
             if (superAdminsCount <= 1)
             {
-                return Result.Failure(
-                    Error.Conflict(
-                        "User.LastSuperAdmin",
-                        "The last super admin cannot be deleted."));
+                return Result.Failure(UserErrors.LastSuperAdmin);
             }
         }
 

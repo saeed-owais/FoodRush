@@ -11,22 +11,19 @@ namespace FoodRush.Application.Features.Authentication.ConfirmEmailChange;
 internal sealed class ConfirmEmailChangeCommandHandler
 (
     IApplicationDbContext dbContext,
-    IEmailChangeTokenProvider tokenProvider
+    IEmailChangeTokenProvider tokenProvider,
+    ICurrentRequestInfo currentRequestInfo,
+    IRefreshTokenService refreshTokenService
 ) : IRequestHandler<ConfirmEmailChangeCommand, Result>
 
 {
-    private static readonly Error InvalidToken =
-    Error.Validation(
-        "EmailChange.InvalidToken",
-        "The email change token is invalid or expired.");
-
     public async Task<Result> Handle(ConfirmEmailChangeCommand request, CancellationToken cancellationToken)
     {
         EmailChangeTokenPayload? payload = tokenProvider.ValidateToken(request.Token);
 
         if (payload == null)
         {
-            return Result.Failure(InvalidToken);
+            return Result.Failure(AuthErrors.InvalidEmailChangeToken);
         }
 
         User? user = await dbContext.Users
@@ -35,14 +32,12 @@ internal sealed class ConfirmEmailChangeCommandHandler
 
         if (user == null)
         {
-            return Result.Failure(
-                Error.NotFound("User.NotFound", $"User with ID {payload.UserId} not found.")
-            );
+            return Result.Failure(UserErrors.NotFound(payload.UserId));
         }
 
         if (user.SecurityStamp != payload.SecurityStamp)
         {
-            return Result.Failure(InvalidToken);
+            return Result.Failure(AuthErrors.InvalidEmailChangeToken);
         }
 
         string normalizedEmail = payload.NewEmail.Trim().ToUpperInvariant();
@@ -52,8 +47,7 @@ internal sealed class ConfirmEmailChangeCommandHandler
 
         if (emailExists)
         {
-            return Result.Failure(
-                Error.Conflict("Email.AlreadyInUse", "The provided email is already in use by another account."));
+            return Result.Failure(UserErrors.EmailAlreadyExists);
         }
 
         user.Email = payload.NewEmail;
@@ -64,10 +58,10 @@ internal sealed class ConfirmEmailChangeCommandHandler
 
         user.SecurityStamp = Guid.NewGuid().ToString();
 
-        await dbContext.RefreshTokens
-            .Where(rt => rt.UserId == user.Id && rt.RevokedAt == null)
-            .ExecuteUpdateAsync(
-            setters => setters.SetProperty(u => u.RevokedAt, DateTime.UtcNow),
+        await refreshTokenService.RevokeAllAsync(
+            user.Id,
+            currentRequestInfo.IpAddress,
+            DateTime.UtcNow,
             cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);

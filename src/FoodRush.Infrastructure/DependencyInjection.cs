@@ -44,6 +44,8 @@ namespace FoodRush.Infrastructure
 
             services.AddScoped<IFileStorageService, CloudinaryFileStorageService>();
 
+            services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
             return services;
         }
         public static IServiceCollection AddDatabase(this IServiceCollection services, string connectionString)

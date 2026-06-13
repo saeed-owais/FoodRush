@@ -21,9 +21,7 @@ internal sealed class UpdatePermissionCommandHandler
 
         if (permission == null)
         {
-            return Result.Failure<UpdatePermissionResponse>(Error.NotFound(
-                "Permission.NotFound",
-                $"Permission with ID {request.Id} not found."));
+            return Result.Failure<UpdatePermissionResponse>(PermissionErrors.NotFound(request.Id));
         }
 
         permission.Name = request.Name;

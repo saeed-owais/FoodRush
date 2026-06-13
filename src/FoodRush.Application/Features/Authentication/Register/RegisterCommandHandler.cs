@@ -35,10 +35,7 @@ internal sealed class RegisterCommandHandler(
 
         if (emailExists)
         {
-            return Result.Failure<RegisterResponse>(
-                Error.Conflict(
-                    "Auth.EmailAlreadyExists",
-                    "Email is already in use."));
+            return Result.Failure<RegisterResponse>(UserErrors.EmailAlreadyExists);
         }
 
         bool phoneExists = await dbContext.Users
@@ -49,10 +46,7 @@ internal sealed class RegisterCommandHandler(
 
         if (phoneExists)
         {
-            return Result.Failure<RegisterResponse>(
-                Error.Conflict(
-                    "Auth.PhoneAlreadyExists",
-                    "Phone number is already in use."));
+            return Result.Failure<RegisterResponse>(UserErrors.PhoneAlreadyExists);
         }
         User user = new()
         {
@@ -84,10 +78,7 @@ internal sealed class RegisterCommandHandler(
 
         if (customerRole is null)
         {
-            return Result.Failure<RegisterResponse>(
-                Error.Failure(
-                    "Auth.RoleNotFound",
-                    "Customer role was not found."));
+            return Result.Failure<RegisterResponse>(RoleErrors.CustomerRoleNotFound);
         }
 
         user.UserRoles.Add(new UserRole

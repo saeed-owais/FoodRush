@@ -18,8 +18,7 @@ internal sealed class GetRolePermissionsQueryHandler
 
         if (!roleExists)
         {
-            return Result.Failure<List<RolePermissionResponse>>
-                (Error.NotFound("Role is not found", $"Role with ID {request.RoleId} is not found."));
+            return Result.Failure<List<RolePermissionResponse>>(RoleErrors.NotFound(request.RoleId));
         }
 
         var rolePermissions = await _dbContext.RolePermissions

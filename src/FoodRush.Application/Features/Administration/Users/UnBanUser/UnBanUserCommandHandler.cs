@@ -19,17 +19,13 @@ internal sealed class UnBanUserCommandHandler
 
         if (user == null)
         {
-            return Result.Failure(
-                Error.NotFound("User.NotFound", $"User with ID {request.UserId} was not found"));
+            return Result.Failure(UserErrors.NotFound(request.UserId));
         }
 
         if (user.LockoutEnd is null ||
             user.LockoutEnd <= DateTime.UtcNow)
         {
-            return Result.Failure(
-                Error.Conflict(
-                    "User.NotBanned",
-                    $"User with ID {request.UserId} is not banned."));
+            return Result.Failure(UserErrors.NotBanned(request.UserId));
         }
 
         user.LockoutEnd = null;

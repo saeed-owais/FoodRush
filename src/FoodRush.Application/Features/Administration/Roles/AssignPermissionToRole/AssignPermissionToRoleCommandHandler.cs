@@ -20,7 +20,7 @@ internal sealed class AssignPermissionToRoleCommandHandler
 
         if (!roleExists)
         {
-            return Result.Failure(Error.NotFound("Role.NotFound", $"Role with ID {request.RoleId} was not found."));
+            return Result.Failure(RoleErrors.NotFound(request.RoleId));
         }
 
         bool permissionExists = await _dbContext.Permissions
@@ -30,10 +30,7 @@ internal sealed class AssignPermissionToRoleCommandHandler
 
         if (!permissionExists)
         {
-            return Result.Failure
-                (Error.NotFound(
-                    "Permission.NotFound",
-                    $"Permission with ID {request.PermissionId} was not found."));
+            return Result.Failure(PermissionErrors.NotFound(request.PermissionId));
         }
 
         bool alreadyAssigned = await _dbContext.RolePermissions
@@ -44,9 +41,7 @@ internal sealed class AssignPermissionToRoleCommandHandler
         if (alreadyAssigned)
         {
             return Result.Failure
-                (Error.Conflict(
-                    "Permission.AlreadyAssigned",
-                    $"Permission with ID {request.PermissionId} is already assigned to Role with ID {request.RoleId}."));
+                (PermissionErrors.AlreadyAssignedToRole(request.PermissionId));
         }
 
         await _dbContext.RolePermissions.AddAsync(

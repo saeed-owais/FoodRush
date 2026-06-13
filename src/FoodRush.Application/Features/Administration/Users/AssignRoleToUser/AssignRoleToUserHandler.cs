@@ -19,8 +19,7 @@ internal sealed class AssignRoleToUserHandler
 
         if (!userExists)
         {
-            return Result.Failure(
-                Error.NotFound("User.NotFound", $"User with ID {request.UserId} was not found"));
+            return Result.Failure(UserErrors.NotFound(request.UserId));
         }
 
         bool roleExists = await dbContext.Roles
@@ -28,8 +27,7 @@ internal sealed class AssignRoleToUserHandler
 
         if (!roleExists)
         {
-            return Result.Failure(
-                Error.NotFound("Role.NotFound", $"Role with ID {request.RoleId} was not found"));
+            return Result.Failure(RoleErrors.NotFound(request.RoleId));
         }
 
         bool isRoleAssignedToUser = await dbContext.UserRoles
@@ -41,7 +39,7 @@ internal sealed class AssignRoleToUserHandler
         if (isRoleAssignedToUser)
         {
             return Result.Failure(
-                Error.Conflict("UserRole.Conflict", $"Role with ID {request.RoleId} is already assigned to user with ID {request.UserId}"));
+                RoleErrors.AlreadyAssignedToUser(request.RoleId, request.UserId));
         }
 
         await dbContext.UserRoles

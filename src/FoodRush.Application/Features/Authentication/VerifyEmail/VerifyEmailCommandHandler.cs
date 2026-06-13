@@ -19,9 +19,7 @@ internal sealed class VerifyEmailCommandHandler(
 
         if (payload == null)
         {
-            return Result.Failure(
-                Error.Validation("Invalid.Token", "The provided token is invalid or has expired.")
-            );
+            return Result.Failure(AuthErrors.InvalidEmailVerifyToken);
         }
 
         User? user = await dbContext.Users
@@ -30,9 +28,7 @@ internal sealed class VerifyEmailCommandHandler(
 
         if (user == null)
         {
-            return Result.Failure(
-                Error.NotFound("User.NotFound", $"The user associated with the token was not found.")
-            );
+            return Result.Failure(UserErrors.NotFound(payload.UserId));
         }
 
         if (user.IsEmailVerified)
@@ -40,23 +36,20 @@ internal sealed class VerifyEmailCommandHandler(
             return Result.Success();
         }
 
-        bool isEmailMatch = string.Equals(user.Email,
-                                          payload.Email,
-                                          StringComparison.OrdinalIgnoreCase);
+        bool isEmailMatch =
+            string.Equals(
+                user.Email,
+                payload.Email,
+                StringComparison.OrdinalIgnoreCase);
 
         if (!isEmailMatch)
         {
-            return Result.Failure(
-                Error.Validation("EmailVerification.InvalidToken",
-                                 "The verification token does not match the user's email."));
+            return Result.Failure(AuthErrors.InvalidEmailVerifyToken);
         }
 
         if (user.SecurityStamp != payload.SecurityStamp)
         {
-            return Result.Failure(
-                Error.Validation(
-                    "EmailVerification.InvalidToken",
-                    "The verification token is no longer valid."));
+            return Result.Failure(AuthErrors.InvalidEmailVerifyToken);
         }
 
         user.IsEmailVerified = true;

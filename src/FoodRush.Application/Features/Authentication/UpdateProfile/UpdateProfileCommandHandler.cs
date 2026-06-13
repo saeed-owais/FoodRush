@@ -22,8 +22,7 @@ internal sealed class UpdateProfileCommandHandler
 
         if (user == null)
         {
-            return Result.Failure(
-                Error.NotFound("User.NotFound", $"User with ID {userContext.UserId} not found."));
+            return Result.Failure(UserErrors.NotFound(userContext.UserId));
         }
 
         if (user.PhoneNumber != request.PhoneNumber)

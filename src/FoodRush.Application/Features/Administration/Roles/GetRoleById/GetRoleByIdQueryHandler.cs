@@ -23,7 +23,7 @@ public sealed class GetRoleByIdQueryHandler
 
         if (role == null)
         {
-            return Result.Failure<RoleResponse>(Error.NotFound("code", "Role not found"));
+            return Result.Failure<RoleResponse>(RoleErrors.NotFound(request.RoleId));
         }
 
         return new RoleResponse(role.Id, role.Name, role.Code);

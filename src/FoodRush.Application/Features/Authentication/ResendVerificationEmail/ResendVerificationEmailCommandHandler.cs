@@ -40,8 +40,7 @@ internal sealed class ResendVerificationEmailCommandHandler
 
         if (user.IsEmailVerified)
         {
-            return Result.Failure(
-                Error.Conflict("User.EmailAlreadyVerified", "User's email is already verified"));
+            return Result.Failure(UserErrors.EmailAlreadyVerified);
         }
 
         var token = tokenProvider.GenerateToken(new EmailVerificationTokenPayload

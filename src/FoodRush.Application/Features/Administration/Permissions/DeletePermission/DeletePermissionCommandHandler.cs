@@ -19,9 +19,7 @@ internal sealed class DeletePermissionCommandHandler
 
         if (permission == null)
         {
-            return Result.Failure(Error.NotFound(
-                "Permission.NotFound",
-                $"Permission with ID {request.Id} not found."));
+            return Result.Failure(PermissionErrors.NotFound(request.Id));
         }
 
         bool isPermissionAssignedToRoles = await _dbContext.RolePermissions
@@ -29,9 +27,7 @@ internal sealed class DeletePermissionCommandHandler
 
         if (isPermissionAssignedToRoles)
         {
-            return Result.Failure(Error.Conflict(
-                "Permission.Conflict",
-                $"Permission with ID {request.Id} is assigned to one or more roles and cannot be deleted."));
+            return Result.Failure(PermissionErrors.AlreadyAssignedToRole(request.Id));
         }
 
         bool isPermissionAssignedToUsers = await _dbContext.UserPermissions
@@ -39,9 +35,7 @@ internal sealed class DeletePermissionCommandHandler
 
         if (isPermissionAssignedToUsers)
         {
-            return Result.Failure(Error.Conflict(
-                "Permission.Conflict",
-                $"Permission with ID {request.Id} is assigned to one or more users and cannot be deleted."));
+            return Result.Failure(PermissionErrors.AlreadyAssignedToUsers(request.Id));
         }
 
         _dbContext.Permissions
