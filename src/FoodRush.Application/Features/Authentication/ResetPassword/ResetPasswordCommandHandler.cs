@@ -14,7 +14,8 @@ internal sealed class ResetPasswordCommandHandler
     IPasswordHasher passwordHasher,
     IPasswordResetTokenProvider tokenProvider,
     IRefreshTokenService refreshTokenService,
-    ICurrentRequestInfo currentRequestInfo
+    ICurrentRequestInfo currentRequestInfo,
+    IUserSecurityStampService securityStampService
 )
     : IRequestHandler<ResetPasswordCommand, Result>
 {
@@ -60,6 +61,8 @@ internal sealed class ResetPasswordCommandHandler
         await refreshTokenService.RevokeAllAsync(user.Id, revokedByIp, utcNow, cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await securityStampService.SetAsync(user.Id, user.SecurityStamp, cancellationToken);
 
         return Result.Success();
     }

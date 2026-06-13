@@ -1,4 +1,5 @@
-﻿using FoodRush.Application.Abstractions.Persistence;
+﻿using FoodRush.Application.Abstractions.Authentication;
+using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Common;
 using FoodRush.Application.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
@@ -8,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace FoodRush.Application.Features.Administration.Users.BanUser;
 
 internal sealed class BanUserCommandHandler
-    (IApplicationDbContext dbContext)
+    (IApplicationDbContext dbContext,
+    IUserSecurityStampService securityStampService)
     : IRequestHandler<BanUserCommand, Result>
 {
     public async Task<Result> Handle(BanUserCommand request, CancellationToken cancellationToken)
@@ -31,12 +33,19 @@ internal sealed class BanUserCommandHandler
 
         if (user.LockoutEnd > utcNow)
         {
-            return Result.Failure(UserErrors.AlreadyBanned(request.UserId, utcNow));
+            return Result.Failure(
+                UserErrors.AlreadyBanned(
+                    request.UserId,
+                    user.LockoutEnd.Value));
         }
 
         user.LockoutEnd = request.BanEndDate;
 
+        user.SecurityStamp = Guid.NewGuid().ToString();
+
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await securityStampService.SetAsync(user.Id, user.SecurityStamp, cancellationToken);
 
         return Result.Success();
     }

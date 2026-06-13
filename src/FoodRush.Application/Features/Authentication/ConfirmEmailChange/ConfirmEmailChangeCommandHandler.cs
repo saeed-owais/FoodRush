@@ -13,7 +13,8 @@ internal sealed class ConfirmEmailChangeCommandHandler
     IApplicationDbContext dbContext,
     IEmailChangeTokenProvider tokenProvider,
     ICurrentRequestInfo currentRequestInfo,
-    IRefreshTokenService refreshTokenService
+    IRefreshTokenService refreshTokenService,
+    IUserSecurityStampService securityStampService
 ) : IRequestHandler<ConfirmEmailChangeCommand, Result>
 
 {
@@ -65,6 +66,8 @@ internal sealed class ConfirmEmailChangeCommandHandler
             cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await securityStampService.SetAsync(user.Id, user.SecurityStamp, cancellationToken);
 
         return Result.Success();
 

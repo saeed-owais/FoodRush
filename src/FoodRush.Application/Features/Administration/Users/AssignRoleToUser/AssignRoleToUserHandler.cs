@@ -1,4 +1,5 @@
-﻿using FoodRush.Application.Abstractions.Persistence;
+﻿using FoodRush.Application.Abstractions.Authentication;
+using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Common;
 using FoodRush.Application.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
@@ -8,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace FoodRush.Application.Features.Administration.Users.AssignRoleToUser;
 
 internal sealed class AssignRoleToUserHandler
-    (IApplicationDbContext dbContext)
+    (IApplicationDbContext dbContext,
+    IUserSecurityStampService securityStampService)
     : IRequestHandler<AssignRoleToUserCommand, Result>
 {
     public async Task<Result> Handle(AssignRoleToUserCommand request, CancellationToken cancellationToken)
@@ -49,7 +51,19 @@ internal sealed class AssignRoleToUserHandler
                 RoleId = request.RoleId,
             }, cancellationToken);
 
+        string securityStamp = Guid.NewGuid().ToString();
+
+        await dbContext.Users
+        .Where(u => u.Id == request.UserId)
+        .ExecuteUpdateAsync(
+            u => u.SetProperty(
+                user => user.SecurityStamp,
+                securityStamp),
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await securityStampService.SetAsync(request.UserId, securityStamp, cancellationToken);
 
         return Result.Success();
     }

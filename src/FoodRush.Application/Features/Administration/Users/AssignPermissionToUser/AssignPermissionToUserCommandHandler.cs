@@ -1,4 +1,5 @@
-﻿using FoodRush.Application.Abstractions.Persistence;
+﻿using FoodRush.Application.Abstractions.Authentication;
+using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Common;
 using FoodRush.Application.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
@@ -8,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace FoodRush.Application.Features.Administration.Users.AssignPermissionToUser;
 
 internal sealed class AssignPermissionToUserCommandHandler
-    (IApplicationDbContext _dbContext)
+    (IApplicationDbContext _dbContext,
+    IUserSecurityStampService securityStampService)
     : IRequestHandler<AssignPermissionToUserCommand, Result>
 {
     public async Task<Result> Handle(AssignPermissionToUserCommand request, CancellationToken cancellationToken)
@@ -44,7 +46,20 @@ internal sealed class AssignPermissionToUserCommandHandler
         };
 
         await _dbContext.UserPermissions.AddAsync(userPermission, cancellationToken);
+
+        string newSecurityStamp = Guid.NewGuid().ToString();
+
+        await _dbContext.Users
+            .Where(u => u.Id == request.UserId)
+            .ExecuteUpdateAsync(
+                u => u.SetProperty(
+                    user => user.SecurityStamp,
+                    newSecurityStamp),
+                cancellationToken);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await securityStampService.SetAsync(request.UserId, newSecurityStamp, cancellationToken);
 
         return Result.Success();
     }

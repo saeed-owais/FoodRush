@@ -14,7 +14,8 @@ internal sealed class ChangePasswordCommandHandler
     IPasswordHasher passwordHasher,
     IUserContext userContext,
     ICurrentRequestInfo currentRequestInfo,
-    IRefreshTokenService refreshTokenService
+    IRefreshTokenService refreshTokenService,
+    IUserSecurityStampService securityStampService
 ) : IRequestHandler<ChangePasswordCommand, Result>
 {
     public async Task<Result> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
@@ -51,6 +52,8 @@ internal sealed class ChangePasswordCommandHandler
         await refreshTokenService.RevokeAllAsync(user.Id, currentRequestInfo.IpAddress, dateTime, cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await securityStampService.SetAsync(user.Id, user.SecurityStamp, cancellationToken);
 
         return Result.Success();
     }

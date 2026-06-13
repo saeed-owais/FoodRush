@@ -1,4 +1,5 @@
-﻿using FoodRush.Application.Abstractions.Persistence;
+﻿using FoodRush.Application.Abstractions.Authentication;
+using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Common;
 using FoodRush.Application.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
@@ -8,7 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace FoodRush.Application.Features.Administration.Users.RemovePermissionFromUser;
 
 internal sealed class RemovePermissionFromUserCommandHandler
-    (IApplicationDbContext dbContext)
+    (IApplicationDbContext dbContext,
+    IUserSecurityStampService securityStampService)
     : IRequestHandler<RemovePermissionFromUserCommand, Result>
 {
     public async Task<Result> Handle(RemovePermissionFromUserCommand request, CancellationToken cancellationToken)
@@ -42,7 +44,20 @@ internal sealed class RemovePermissionFromUserCommandHandler
         }
 
         dbContext.UserPermissions.Remove(userPermission);
+
+        string securityStamp = Guid.NewGuid().ToString();
+
+        await dbContext.Users
+            .Where(u => u.Id == request.UserId)
+            .ExecuteUpdateAsync(
+                u => u.SetProperty(
+                    user => user.SecurityStamp,
+                    securityStamp),
+                cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await securityStampService.SetAsync(request.UserId, securityStamp, cancellationToken);
 
         return Result.Success();
     }
