@@ -1,0 +1,326 @@
+﻿using FoodRush.API.Extensions;
+using FoodRush.Application.Common;
+using FoodRush.Application.Common.Errors;
+using FoodRush.Application.Features.Authentication.ChangeEmail;
+using FoodRush.Application.Features.Authentication.ChangePassword;
+using FoodRush.Application.Features.Authentication.ConfirmEmailChange;
+using FoodRush.Application.Features.Authentication.ForgotPassword;
+using FoodRush.Application.Features.Authentication.GetUserPrfile;
+using FoodRush.Application.Features.Authentication.Login;
+using FoodRush.Application.Features.Authentication.Logout;
+using FoodRush.Application.Features.Authentication.Refresh;
+using FoodRush.Application.Features.Authentication.Register;
+using FoodRush.Application.Features.Authentication.ResendVerificationEmail;
+using FoodRush.Application.Features.Authentication.ResetPassword;
+using FoodRush.Application.Features.Authentication.Sessions;
+using FoodRush.Application.Features.Authentication.Sessions.LogoutAllSessions;
+using FoodRush.Application.Features.Authentication.Sessions.RevokeSession;
+using FoodRush.Application.Features.Authentication.UpdateProfile;
+using FoodRush.Application.Features.Authentication.UploadAvatar;
+using FoodRush.Application.Features.Authentication.VerifyEmail;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace FoodRush.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthController : ControllerBase
+    {
+        private readonly IMediator _mediator;
+
+        public AuthController(IMediator mediator)
+        {
+            _mediator = mediator;
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(RegisterCommand request, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(request, cancellationToken);
+
+            return result.IsSuccess
+            ? StatusCode(StatusCodes.Status201Created, result.Value)
+            : result.Problem();
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginCommand request, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(request, cancellationToken);
+
+            if (result.IsFailure)
+            {
+                return result.Problem();
+            }
+
+            Response.Cookies.Append(
+                "refreshToken",
+                result.Value.RefreshToken,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddDays(7)
+                });
+
+            return Ok(new
+            {
+                AccessToken = result.Value.AccessToken,
+                ExpiresAt = result.Value.ExpiresAtUtc
+            });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
+        {
+            string? refreshToken =
+                Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return Result
+                    .Failure(
+                        Error.Unauthorized(
+                            "Auth.MissingRefreshToken",
+                            "Refresh token is missing."))
+                    .Problem();
+            }
+
+            RefreshTokenCommand command =
+                new(refreshToken);
+
+            var result = await _mediator.Send(
+                command,
+                cancellationToken);
+
+            if (result.IsFailure)
+            {
+                return result.Problem();
+            }
+
+            Response.Cookies.Append(
+                "refreshToken",
+                result.Value.RefreshToken,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddDays(7)
+                });
+
+            return Ok(new
+            {
+                AccessToken = result.Value.AccessToken,
+                ExpiresAt = result.Value.ExpiresAtUtc
+            });
+        }
+
+        [Authorize]
+        [HttpPost("logout-current-session")]
+        public async Task<IActionResult> Logout(CancellationToken cancellationToken)
+        {
+            string? refreshToken = Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return NoContent();
+            }
+
+            LogoutCommand command = new(refreshToken);
+
+            var result = await _mediator.Send(command, cancellationToken);
+
+            if (result.IsFailure)
+            {
+                return result.Problem();
+            }
+
+            Response.Cookies.Delete("refreshToken", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            });
+
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpGet("sessions")]
+        public async Task<IActionResult> GetSessions(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new GetSessionsQuery(),
+                cancellationToken);
+
+            return result.IsSuccess
+                ? Ok(result.Value)
+                : result.Problem();
+        }
+
+        [Authorize]
+        [HttpPost("revoke-session/{sessionId:guid}")]
+        public async Task<IActionResult> RevokeSession(Guid sessionId, CancellationToken cancellationToken)
+        {
+            RevokeSessionCommand command =
+                new(sessionId);
+
+            Result result = await _mediator.Send(
+                command,
+                cancellationToken);
+
+            return result.IsSuccess
+                ? NoContent()
+                : result.Problem();
+        }
+
+        [Authorize]
+        [HttpPost("logout-all-sessions")]
+        public async Task<IActionResult> LogoutAllSessions(CancellationToken cancellationToken)
+        {
+            LogoutAllSessionsCommand command =
+                new();
+
+            Result result = await _mediator.Send(
+                command,
+                cancellationToken);
+
+            Response.Cookies.Delete(
+                "refreshToken",
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict
+                });
+
+            return result.IsSuccess
+                ? NoContent()
+                : result.Problem();
+        }
+
+        [HttpPost("resend-verification-email")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResendVerificationEmail(
+            [FromBody] ResendVerificationEmailCommand command,
+            CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(
+                command,
+                cancellationToken);
+
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
+        [HttpPost("verify-email")]
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailCommand command, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(command, cancellationToken);
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(command, cancellationToken);
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> Me(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetUserPrfileQuery(), cancellationToken);
+
+            return result.IsSuccess
+                ? Ok(result.Value)
+                : result.Problem();
+        }
+
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile(UpdateProfileCommand command, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
+        [HttpPost("avatar")]
+        [Authorize]
+        public async Task<IActionResult> UploadAvatar(IFormFile file, CancellationToken cancellationToken)
+        {
+            await using var stream = file.OpenReadStream();
+
+            UploadAvatarCommand command = new(
+                file.Length,
+                file.ContentType,
+                stream, file.FileName);
+
+            var result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                Ok,
+                failure => failure.Problem());
+        }
+
+        [HttpPost("change-email")]
+        [Authorize]
+        public async Task<IActionResult> ChangeEmail([FromBody] ChangeEmailCommand command, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
+        [HttpPost("confirm-email-change")]
+        [Authorize]
+        public async Task<IActionResult> ConfirmEmailChange([FromBody] ConfirmEmailChangeCommand command, CancellationToken cancellationToken)
+        {
+            Result result = await _mediator.Send(command, cancellationToken);
+
+            return result.Match(
+                NoContent,
+                failure => failure.Problem());
+        }
+
+    }
+}

@@ -1,0 +1,73 @@
+# =============================================================================
+# .dockerignore — Excludes files from the Docker build context.
+#
+# A lean build context = faster builds + smaller images + no secret leaks.
+# This file is as important as .gitignore. Treat it seriously.
+# =============================================================================
+
+# ---- Build artifacts (always generated inside the container) ----
+**/bin/
+**/obj/
+**/out/
+
+# ---- Source control ----
+.git/
+.gitignore
+.gitattributes
+**/.github/
+
+# ---- Dependencies (reinstalled inside container) ----
+**/node_modules/
+**/bower_components/
+**/.npm/
+**/.yarn/
+
+# ---- Secrets & credentials — NEVER send to build context ----
+**/.env
+**/.env.*
+**/secrets/
+**/certs/
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.p12
+
+# ---- Logs ----
+**/logs/
+**/*.log
+
+# ---- IDE & OS files ----
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+**/*.suo
+**/.DS_Store
+**/Thumbs.db
+
+# ---- Docker files (no need to copy into image) ----
+**/docker-compose*.yml
+**/Dockerfile*
+**/.dockerignore
+
+# ---- Documentation ----
+**/README.md
+**/CHANGELOG.md
+**/docs/
+
+# ---- Test projects (excluded from production image) ----
+**/*.Tests/
+**/*.Test/
+**/*.Specs/
+**/TestResults/
+**/coverage/
+
+# ---- CI/CD ----
+**/.github/
+**/.gitlab-ci.yml
+**/Jenkinsfile
+
+# ---- Terraform / infra (if co-located) ----
+**/terraform/
+**/*.tfstate
+**/*.tfvars

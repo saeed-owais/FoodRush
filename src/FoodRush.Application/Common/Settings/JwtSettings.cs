@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace FoodRush.Application.Common.Settings
 {
@@ -14,7 +11,7 @@ namespace FoodRush.Application.Common.Settings
 
         [Required]
         public string Issuer { get; init; } = string.Empty;
-        
+
         [Required]
         public string Audience { get; init; } = string.Empty;
 
