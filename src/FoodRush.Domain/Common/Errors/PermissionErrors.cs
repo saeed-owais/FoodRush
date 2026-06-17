@@ -1,6 +1,6 @@
-﻿namespace FoodRush.Application.Common.Errors;
+﻿namespace FoodRush.Domain.Common.Errors;
 
-internal static class PermissionErrors
+public static class PermissionErrors
 {
     public static Error NotFound(Guid permissionId)
     => Error.NotFound(

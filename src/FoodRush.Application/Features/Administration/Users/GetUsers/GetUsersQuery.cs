@@ -1,5 +1,5 @@
-﻿using FoodRush.Application.Common;
-using FoodRush.Application.Common.Models;
+﻿using FoodRush.Application.Common.Models;
+using FoodRush.Domain.Common;
 using MediatR;
 
 namespace FoodRush.Application.Features.Administration.Users.GetUsers;

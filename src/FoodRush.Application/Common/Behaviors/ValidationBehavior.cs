@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
-using FoodRush.Application.Common.Errors;
+using FoodRush.Domain.Common;
+using FoodRush.Domain.Common.Errors;
 using MediatR;
 using System.Reflection;
 

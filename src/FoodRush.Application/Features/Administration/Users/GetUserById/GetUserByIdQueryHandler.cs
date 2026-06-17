@@ -1,8 +1,8 @@
 ﻿using FoodRush.Application.Abstractions.Persistence;
-using FoodRush.Application.Common;
-using FoodRush.Application.Common.Errors;
 using FoodRush.Application.Features.Administration.Permissions.GetPermissions;
 using FoodRush.Application.Features.Administration.Roles;
+using FoodRush.Domain.Common;
+using FoodRush.Domain.Common.Errors;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 

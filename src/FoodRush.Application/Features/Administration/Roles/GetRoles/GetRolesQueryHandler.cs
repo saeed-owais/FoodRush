@@ -1,5 +1,5 @@
 ﻿using FoodRush.Application.Abstractions.Persistence;
-using FoodRush.Application.Common;
+using FoodRush.Domain.Common;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 

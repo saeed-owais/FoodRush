@@ -1,5 +1,4 @@
-﻿using FoodRush.Application.Common;
-using FoodRush.Application.Common.Errors;
+﻿using FoodRush.Domain.Common;
 
 namespace FoodRush.API.Extensions
 {

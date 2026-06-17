@@ -1,6 +1,5 @@
 ﻿using FoodRush.Application.Abstractions.Authentication;
 using FoodRush.Application.Abstractions.Persistence;
-using FoodRush.Domain.Common;
 using FoodRush.Domain.Entities.Identity;
 using FoodRush.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -56,7 +55,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 : null;
 
         foreach (var entry in ChangeTracker
-            .Entries<BaseEntity>())
+            .Entries<IAuditable>())
         {
             switch (entry.State)
             {
@@ -79,22 +78,26 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                     entry.Entity.UpdatedBy = currentUserId;
 
                     break;
+            }
+        }
 
-                case EntityState.Deleted:
+        foreach (var entry in ChangeTracker.Entries<ISoftDeletable>())
+        {
+            if (entry.State != EntityState.Deleted)
+                continue;
 
-                    entry.State = EntityState.Modified;
+            entry.State = EntityState.Modified;
 
-                    entry.Entity.IsDeleted = true;
+            entry.Entity.IsDeleted = true;
 
-                    entry.Entity.DeletedAt = utcNow;
+            entry.Entity.DeletedAt = utcNow;
 
-                    entry.Entity.DeletedBy = currentUserId;
+            entry.Entity.DeletedBy = currentUserId;
 
-                    entry.Entity.UpdatedAt = utcNow;
-
-                    entry.Entity.UpdatedBy = currentUserId;
-
-                    break;
+            if (entry.Entity is IAuditable auditable)
+            {
+                auditable.UpdatedAt = utcNow;
+                auditable.UpdatedBy = currentUserId;
             }
         }
 

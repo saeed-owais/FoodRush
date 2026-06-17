@@ -1,7 +1,7 @@
-﻿using FoodRush.Application.Common.Errors;
+﻿using FoodRush.Domain.Common.Errors;
 using System.Diagnostics.CodeAnalysis;
 
-namespace FoodRush.Application.Common
+namespace FoodRush.Domain.Common
 {
     public class Result
     {

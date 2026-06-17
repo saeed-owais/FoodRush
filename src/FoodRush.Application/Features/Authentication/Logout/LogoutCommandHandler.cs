@@ -1,6 +1,6 @@
 ﻿using FoodRush.Application.Abstractions.Authentication;
 using FoodRush.Application.Abstractions.Persistence;
-using FoodRush.Application.Common;
+using FoodRush.Domain.Common;
 using FoodRush.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
