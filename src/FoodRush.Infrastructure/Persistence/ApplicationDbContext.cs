@@ -1,7 +1,11 @@
 ﻿using FoodRush.Application.Abstractions.Authentication;
 using FoodRush.Application.Abstractions.Persistence;
+using FoodRush.Domain.Common;
 using FoodRush.Domain.Entities.Identity;
 using FoodRush.Domain.Interfaces;
+using FoodRush.Domain.Restaurants;
+using FoodRush.Domain.Restaurants.Entities.RestaurantDocument;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -11,14 +15,18 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     private readonly IUserContext _userContext;
 
+    private readonly IPublisher _publisher;
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
-        IUserContext userContext)
+        IUserContext userContext,
+        IPublisher publisher)
         : base(options)
     {
         _userContext = userContext;
+        _publisher = publisher;
     }
 
+    #region Properties
     public DbSet<User> Users { get; set; }
 
     public DbSet<Role> Roles { get; set; }
@@ -34,6 +42,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     public DbSet<OtpRequest> OtpRequests { get; set; }
+
+    public DbSet<Restaurant> Restaurants { get; set; }
+
+    public DbSet<RestaurantDocument> RestaurantDocuments { get; set; }
+    #endregion
 
     override protected void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -101,7 +114,31 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             }
         }
 
-        return await base.SaveChangesAsync(cancellationToken);
+        var entitiesWithEvents = ChangeTracker
+            .Entries<IHasDomainEvents>()
+            .Select(e => e.Entity)
+            .Where(e => e.DomainEvents.Any())
+            .ToList();
+
+        var domainEvents = entitiesWithEvents
+            .SelectMany(e => e.DomainEvents)
+            .ToList();
+
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        foreach (var entity in entitiesWithEvents)
+        {
+            entity.ClearDomainEvents();
+        }
+
+        foreach (var domainEvent in domainEvents)
+        {
+            await _publisher.Publish(
+                domainEvent,
+                cancellationToken);
+        }
+
+        return result;
     }
 
     private static void ApplySoftDeleteQueryFilters(

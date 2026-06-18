@@ -1,4 +1,5 @@
 ﻿using FoodRush.Domain.Entities.Identity;
+using FoodRush.Domain.Restaurants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -21,6 +22,8 @@ namespace FoodRush.Application.Abstractions.Persistence
         public DbSet<RefreshToken> RefreshTokens { get; }
 
         public DbSet<OtpRequest> OtpRequests { get; }
+
+        public DbSet<Restaurant> Restaurants { get; }
 
         public DatabaseFacade Database { get; }
 

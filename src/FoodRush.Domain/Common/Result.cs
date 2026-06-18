@@ -32,6 +32,11 @@ namespace FoodRush.Domain.Common
 
         public static Result<TValue> Failure<TValue>(Error error) =>
             new(default, false, error);
+
+        internal static Result<T> Failure<T>(object invalidLongitude)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class Result<TValue> : Result
