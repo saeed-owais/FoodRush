@@ -2,7 +2,8 @@
 
 public enum DocumentStatus
 {
-    Pending,
+    Draft,
+    UnderReview,
     Approved,
     Rejected
 }

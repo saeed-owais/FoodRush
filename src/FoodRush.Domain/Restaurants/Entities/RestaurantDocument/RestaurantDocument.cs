@@ -6,52 +6,76 @@ namespace FoodRush.Domain.Restaurants.Entities.RestaurantDocument;
 
 public sealed class RestaurantDocument : Entity<DocumentId>
 {
-    private RestaurantDocument(FileUrl fileUrl)
-    {
-        FileUrl = fileUrl;
-    }
     private RestaurantDocument()
     {
     }
+    internal RestaurantDocument(
+       RestaurantId restaurantId,
+       DocumentType type,
+       FileUrl fileUrl)
+    {
+        Id = new DocumentId(Guid.CreateVersion7());
+        RestaurantId = restaurantId;
+        Type = type;
+        FileUrl = fileUrl;
+        Status = DocumentStatus.Draft;
+    }
+
     public RestaurantId RestaurantId { get; private set; }
     public FileUrl FileUrl { get; private set; }
     public DocumentType Type { get; private set; }
 
     public DocumentStatus Status { get; private set; }
 
-    public static RestaurantDocument Create(FileUrl fileUrl, DocumentType documentType, RestaurantId restaurantId)
+    internal Result Approve()
     {
-        return new RestaurantDocument(fileUrl)
+        if (Status != DocumentStatus.UnderReview)
         {
-            Id = new DocumentId(Guid.CreateVersion7()),
-            Type = documentType,
-            RestaurantId = restaurantId,
-            Status = DocumentStatus.Pending
-        };
-    }
+            return Result.Failure(
+                RestaurantErrors.DocumentMustBeUnderReview);
+        }
 
-    public void Approve()
-    {
         Status = DocumentStatus.Approved;
+
+        return Result.Success();
     }
 
-    public void Reject()
+    internal void MarkAsUnderReview()
+    {
+        Status = DocumentStatus.UnderReview;
+    }
+
+    internal void Reject()
     {
         Status = DocumentStatus.Rejected;
     }
 
-    public Result Resubmit(FileUrl fileUrl)
+    internal Result Replace(FileUrl fileUrl)
     {
-        if (Status == DocumentStatus.Approved)
+        if (Status != DocumentStatus.Draft)
         {
             return Result.Failure(
-                RestaurantErrors.CannotResubmitApprovedDocument);
+                RestaurantErrors.DocumentCanOnlyBeReplacedWhileDraft);
         }
 
         FileUrl = fileUrl;
 
-        Status = DocumentStatus.Pending;
+        return Result.Success();
+    }
+
+    internal Result Resubmit(FileUrl fileUrl)
+    {
+        if (Status != DocumentStatus.Rejected)
+        {
+            return Result.Failure(
+                RestaurantErrors.OnlyRejectedDocumentsCanBeResubmitted);
+        }
+
+        FileUrl = fileUrl;
+
+        Status = DocumentStatus.Draft;
 
         return Result.Success();
     }
+
 }

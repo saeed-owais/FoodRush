@@ -3,6 +3,7 @@ using FoodRush.Domain.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
 using FoodRush.Domain.Interfaces;
 using FoodRush.Domain.Restaurants.DomainEvents;
+using FoodRush.Domain.Restaurants.DomainEvents.Document;
 using FoodRush.Domain.Restaurants.Entities.RestaurantDocument;
 using FoodRush.Domain.Restaurants.Enums;
 using FoodRush.Domain.Restaurants.ValueObjects;
@@ -11,13 +12,13 @@ namespace FoodRush.Domain.Restaurants;
 
 public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftDeletable
 {
+    private readonly List<RestaurantDocument> _documents = new();
+
     private Restaurant() { }
     private Restaurant(
         RestaurantId id,
         UserId ownerId,
         Name name,
-        RestaurantStatus status,
-        AverageRating averageRating,
         Latitude latitude,
         Longitude longitude,
         DeliveryRadiusKm deliveryRadius)
@@ -25,15 +26,15 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         Id = id;
         OwnerId = ownerId;
         Name = name;
-        Status = status;
-        AverageRating = averageRating;
         Latitude = latitude;
         Longitude = longitude;
         DeliveryRadiusKm = deliveryRadius;
+
+        Status = RestaurantStatus.Draft;
+        AverageRating = AverageRating.Zero();
     }
 
     #region Props
-    private readonly List<RestaurantDocument> _documents = new();
     public IReadOnlyCollection<RestaurantDocument> Documents => _documents.AsReadOnly();
 
     public UserId OwnerId { get; private set; }
@@ -65,8 +66,6 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
             new RestaurantId(Guid.CreateVersion7()),
             ownerId,
             name,
-            RestaurantStatus.PendingDocuments,
-            AverageRating.Zero(),
             latitude,
             longitude,
             deliveryRadius);
@@ -76,132 +75,95 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         return restaurant;
     }
 
-    public Result SubmitDocument(RestaurantDocument document)
+    public Result UploadDocument(DocumentType documentType, FileUrl fileUrl)
     {
-        if (document is null)
+        if (Status != RestaurantStatus.Draft)
+        {
             return Result.Failure(
-                RestaurantErrors.DocumentCannotBeNull);
-
-        if (Status != RestaurantStatus.PendingDocuments)
-            return Result.Failure(
-                RestaurantErrors.DocumentsCanOnlyBeSubmittedWhilePending);
-
-        var existingDocument =
-            _documents.FirstOrDefault(
-                d => d.Type == document.Type);
-
-        if (existingDocument != null)
-        {
-            var updateResult =
-                existingDocument.Resubmit(
-                    document.FileUrl);
-
-            if (updateResult.IsFailure)
-            {
-                return updateResult;
-            }
-        }
-        else
-        {
-            _documents.Add(document);
+                RestaurantErrors.DocumentsCanOnlyBeUploadedInDraftState);
         }
 
-        if (HasAllRequiredDocuments())
+        var existingDocument = _documents.FirstOrDefault(d => d.Type == documentType);
+
+        if (existingDocument is not null)
         {
-            Status = RestaurantStatus.DocumentsSubmitted;
+            return existingDocument.Replace(fileUrl);
         }
+
+        var document = new RestaurantDocument(Id, documentType, fileUrl);
+
+        _documents.Add(document);
+
+        Raise(new RestaurantDocumentUploadedDomainEvent(
+            Guid.NewGuid(),
+            Id,
+            document.Id,
+            document.Type));
 
         return Result.Success();
     }
 
-    public Result SubmitDocuments(IEnumerable<RestaurantDocument> documents)
+    public Result SubmitForReview()
     {
-        if (documents is null)
-            return Result.Failure(
-                RestaurantErrors.DocumentsCollectionCannotBeEmpty);
-
-        var documentsList = documents.ToList();
-
-        if (documentsList.Count == 0)
-            return Result.Failure(
-                RestaurantErrors.DocumentsCollectionCannotBeEmpty);
-
-        if (Status != RestaurantStatus.PendingDocuments)
-            return Result.Failure(
-                RestaurantErrors.DocumentsCanOnlyBeSubmittedWhilePending);
-
-        if (documentsList
-            .GroupBy(d => d.Type)
-            .Any(g => g.Count() > 1))
+        if (Status != RestaurantStatus.Draft)
         {
             return Result.Failure(
-                RestaurantErrors.DuplicateDocumentTypes);
+                RestaurantErrors.RestaurantMustBeInDraftStateBeforeSubmission);
         }
-
-        foreach (var document in documentsList)
-        {
-            var existingDocument =
-                _documents.FirstOrDefault(
-                    d => d.Type == document.Type);
-
-            if (existingDocument != null)
-            {
-                var updateResult =
-                    existingDocument.Resubmit(
-                        document.FileUrl);
-
-                if (updateResult.IsFailure)
-                {
-                    return updateResult;
-                }
-            }
-            else
-            {
-                _documents.Add(document);
-            }
-        }
-
-        if (HasAllRequiredDocuments())
-        {
-            Status = RestaurantStatus.DocumentsSubmitted;
-        }
-
-        return Result.Success();
-    }
-
-    public Result Approve()
-    {
-        if (Status != RestaurantStatus.DocumentsSubmitted)
-            return Result.Failure(
-                RestaurantErrors.RestaurantMustBeSubmittedBeforeApproval);
 
         if (!HasAllRequiredDocuments())
-            return Result.Failure(
-                RestaurantErrors.AllRequiredDocumentsMustBeUploaded);
-
-        if (!AllDocumentsApproved())
         {
             return Result.Failure(
-                RestaurantErrors.AllDocumentsMustBeApprovedForRestaurantApproval);
+                RestaurantErrors.AllRequiredDocumentsMustBeUploaded);
         }
 
-        Status = RestaurantStatus.Approved;
+        if (HasRejectedDocuments())
+        {
+            return Result.Failure(
+                RestaurantErrors.RejectedDocumentsMustBeResubmitted);
+        }
 
-        Raise(new RestaurantApprovedDomainEvent(Guid.NewGuid(), Id));
+        Status = RestaurantStatus.UnderReview;
+
+        foreach (var document in _documents)
+        {
+            if (document.Status == DocumentStatus.Draft)
+                document.MarkAsUnderReview();
+        }
+
+        Raise(new RestaurantSubmittedForReviewDomainEvent(Guid.NewGuid(), Id));
 
         return Result.Success();
     }
 
-    public Result Reject()
+    public Result ApproveDocument(DocumentId documentId)
     {
-        if (Status != RestaurantStatus.DocumentsSubmitted)
-            return Result.Failure(RestaurantErrors.RestaurantMustBeSubmittedBeforeRejection);
+        if (Status != RestaurantStatus.UnderReview)
+        {
+            return Result.Failure(
+                RestaurantErrors.RestaurantMustBeUnderReviewBeforeApproval);
+        }
 
-        Status = RestaurantStatus.Rejected;
+        var document = GetDocument(documentId);
 
-        Raise(new RestaurantRejectedDomainEvent(Guid.NewGuid(), Id));
+        if (document == null)
+        {
+            return Result.Failure(
+                RestaurantErrors.DocumentNotFound);
+        }
 
-        return Result.Success();
+        var result = document.Approve();
+
+        if (result.IsFailure)
+        {
+            return result;
+        }
+
+        Raise(new RestaurantDocumentApprovedDomainEvent(Guid.NewGuid(), Id, document.Id));
+
+        TryApproveRestaurant();
+
+        return result;
     }
 
     public Result Suspend()
@@ -216,20 +178,131 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         return Result.Success();
     }
 
+    public Result RejectDocument(DocumentId documentId)
+    {
+        if (Status != RestaurantStatus.UnderReview)
+        {
+            return Result.Failure(
+                RestaurantErrors.RestaurantMustBeUnderReviewBeforeRejection);
+        }
+
+        var document = GetDocument(documentId);
+
+        if (document == null)
+        {
+            return Result.Failure(
+                RestaurantErrors.DocumentNotFound);
+        }
+
+        if (document.Status != DocumentStatus.UnderReview)
+        {
+            return Result.Failure(
+                RestaurantErrors.DocumentMustBeUnderReview);
+        }
+
+        document.Reject();
+
+        Status = RestaurantStatus.Draft;
+
+        Raise(new RestaurantDocumentRejectedDomainEvent(Guid.NewGuid(), Id, document.Id));
+
+        return Result.Success();
+    }
+
+    public Result ResubmitDocument(DocumentId documentId, FileUrl fileUrl)
+    {
+        if (Status != RestaurantStatus.Draft)
+        {
+            return Result.Failure(
+                RestaurantErrors.RestaurantMustBeInDraftState);
+        }
+
+        var document = GetDocument(documentId);
+
+        if (document == null)
+        {
+            return Result.Failure(
+                RestaurantErrors.DocumentNotFound);
+        }
+
+        var result = document.Resubmit(fileUrl);
+
+        if (result.IsSuccess)
+        {
+            Raise(new RestaurantDocumentResubmittedDomainEvent(Guid.NewGuid(), Id, document.Id));
+        }
+
+        return result;
+    }
+
+    public Result Reactivate()
+    {
+        if (Status != RestaurantStatus.Suspended)
+        {
+            return Result.Failure(
+                RestaurantErrors.OnlySuspendedRestaurantsCanBeReactivated);
+        }
+
+        Status = RestaurantStatus.Approved;
+
+        Raise(new RestaurantReactivatedDomainEvent(Guid.NewGuid(), Id));
+
+        return Result.Success();
+    }
+
+    public Result UpdateOperationalInformation(Name name, DeliveryRadiusKm deliveryRadiusKm)
+    {
+        if (Status != RestaurantStatus.Approved)
+        {
+            return Result.Failure(
+                RestaurantErrors.OnlyApprovedRestaurantsCanBeUpdated);
+        }
+
+        Name = name;
+        DeliveryRadiusKm = deliveryRadiusKm;
+
+        return Result.Success();
+    }
+
     private bool HasAllRequiredDocuments()
     {
-        return _documents.Any(d => d.Type == DocumentType.BankAccountProof) &&
-               _documents.Any(d => d.Type == DocumentType.CommercialRegistration) &&
-               _documents.Any(d => d.Type == DocumentType.FoodLicense) &&
-               _documents.Any(d => d.Type == DocumentType.HealthCertificate) &&
-               _documents.Any(d => d.Type == DocumentType.NationalId) &&
-               _documents.Any(d => d.Type == DocumentType.OwnershipContract) &&
-               _documents.Any(d => d.Type == DocumentType.TaxCard);
+        return DocumentTypes.Required.All(requiredType => _documents.Any(doc => doc.Type == requiredType));
     }
 
-    private bool AllDocumentsApproved()
+    private RestaurantDocument? GetDocument(DocumentId documentId)
     {
-        return _documents.All(d => d.Status == DocumentStatus.Approved);
+        return _documents.FirstOrDefault(x => x.Id == documentId);
     }
 
+    private void TryApproveRestaurant()
+    {
+        if (Status != RestaurantStatus.UnderReview)
+        {
+            return;
+        }
+
+        if (!AllRequiredDocumentsApproved())
+        {
+            return;
+        }
+
+        Status = RestaurantStatus.Approved;
+
+        Raise(new RestaurantApprovedDomainEvent(Guid.NewGuid(), Id));
+    }
+
+    private bool AllRequiredDocumentsApproved()
+    {
+        return DocumentTypes.Required.All(
+        requiredType =>
+            _documents.Any(
+                d => d.Type == requiredType &&
+                     d.Status == DocumentStatus.Approved));
+    }
+
+    private bool HasRejectedDocuments()
+    {
+        return _documents.Any(
+            d => d.Status == DocumentStatus.Rejected);
+    }
 }

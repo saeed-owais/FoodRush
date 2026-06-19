@@ -2,8 +2,8 @@
 
 public enum RestaurantStatus
 {
-    PendingDocuments,
-    DocumentsSubmitted,
+    Draft,
+    UnderReview,
     Approved,
     Rejected,
     Suspended

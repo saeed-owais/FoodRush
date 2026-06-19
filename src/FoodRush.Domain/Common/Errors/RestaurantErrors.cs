@@ -17,20 +17,20 @@ internal static class RestaurantErrors
     public static readonly Error InvalidLatitude =
         Error.Validation("Restaurant.Latitude.Invalid", "Latitude must be between -90 and 90.");
 
-    public static readonly Error DocumentsCanOnlyBeSubmittedWhilePending =
+    public static readonly Error DocumentsCanOnlyBeUploadedInDraftState =
         Error.Validation(
-            "Restaurant.Documents.CanOnlyBeSubmittedWhilePending",
-            "Documents can only be submitted while the restaurant is in the PendingDocuments state.");
+            "Restaurant.Documents.CanOnlyBeUploadedInDraftState",
+            "Documents can only be uploaded while the restaurant is in the Draft state.");
 
-    public static readonly Error RestaurantMustBeSubmittedBeforeApproval =
+    public static readonly Error RestaurantMustBeUnderReviewBeforeApproval =
     Error.Validation(
-        "Restaurant.Approval.RequiresSubmittedDocuments",
-        "The restaurant must be in the DocumentsSubmitted state before it can be approved.");
+        "Restaurant.Approval.RequiresUnderReview",
+        "The restaurant must be in the UnderReview state before it can be approved.");
 
-    public static readonly Error RestaurantMustBeSubmittedBeforeRejection =
+    public static readonly Error RestaurantMustBeUnderReviewBeforeRejection =
         Error.Validation(
-            "Restaurant.Rejection.RequiresSubmittedDocuments",
-            "The restaurant must be in the DocumentsSubmitted state before it can be rejected.");
+            "Restaurant.Rejection.RequiresUnderReview",
+            "The restaurant must be in the UnderReview state before it can be rejected.");
 
     public static readonly Error OnlyApprovedRestaurantsCanBeSuspended =
         Error.Validation(
@@ -42,11 +42,6 @@ internal static class RestaurantErrors
             "Restaurant.Document.InvalidUrl",
             "Document URL cannot be null or empty.");
 
-    public static readonly Error DocumentsCollectionCannotBeEmpty =
-        Error.Validation(
-            "Restaurant.Documents.EmptyCollection",
-            "At least one document must be provided when submitting documents.");
-
     public static readonly Error DocumentCannotBeNull =
         Error.Validation("Restaurant.Document.Null", "The specified document cannot be null.");
 
@@ -55,20 +50,51 @@ internal static class RestaurantErrors
             "Restaurant.Documents.AllRequiredMustBeUploaded",
             "All required documents must be uploaded before the restaurant can be approved.");
 
-    public static readonly Error AllDocumentsMustBeApprovedForRestaurantApproval =
+    public static readonly Error OnlyRejectedDocumentsCanBeResubmitted =
         Error.Validation(
-            "Restaurant.Approval.AllDocumentsMustBeApproved",
-            "All documents must be approved before the restaurant can be approved.");
+            "Restaurant.Document.Rejected.OnlyRejectedCanBeResubmitted",
+            "Only rejected documents can be resubmitted.");
 
-    public static readonly Error DuplicateDocumentTypes =
+    public static readonly Error DocumentNotFound =
+        Error.NotFound("Restaurant.Document.NotFound", "The specified document was not found.");
+
+    public static readonly Error DocumentMustBeUnderReview =
         Error.Validation(
-            "Restaurant.Documents.DuplicateTypes",
-            "Duplicate document types are not allowed in the documents collection.");
+            "Restaurant.Document.MustBeUnderReview",
+            "The specified document must be in an under-review state.");
 
-    public static readonly Error CannotResubmitApprovedDocument =
+    public static readonly Error OnlySuspendedRestaurantsCanBeReactivated =
         Error.Validation(
-            "Restaurant.Document.Approved.CannotResubmit",
-            "An approved document cannot be resubmitted.");
+            "Restaurant.Reactivation.OnlySuspended",
+            "Only suspended restaurants can be reactivated.");
 
+    public static readonly Error OnlyApprovedRestaurantsCanBeUpdated =
+        Error.Validation(
+            "Restaurant.Update.OnlyApproved",
+            "Only approved restaurants can be updated.");
 
+    public static readonly Error DocumentCanOnlyBeReplacedWhileDraft =
+        Error.Validation(
+            "Restaurant.Document.CanOnlyBeReplacedWhileDraft",
+            "The specified document can only be replaced while it is in the Draft state.");
+
+    public static readonly Error RejectedDocumentsMustBeResubmitted =
+        Error.Validation(
+            "Restaurant.Documents.Rejected.MustBeResubmitted",
+            "All rejected documents must be resubmitted before the restaurant can be approved.");
+
+    public static readonly Error RestaurantMustBeInDraftState =
+        Error.Validation(
+            "Restaurant.State.Draft.Required",
+            "The restaurant must be in the Draft state to perform this action.");
+
+    public static readonly Error RestaurantMustBeInDraftStateBeforeSubmission =
+        Error.Validation(
+            "Restaurant.Submission.RequiresDraft",
+            "The restaurant must be in the Draft state before it can be submitted for review.");
+
+    public static readonly Error DocumentCanOnlyBeMarkedUnderReviewWhileDraft =
+        Error.Validation(
+            "Restaurant.Document.CanOnlyBeMarkedUnderReviewWhileDraft",
+            "The specified document can only be marked as under review while it is in the Draft state.");
 }
