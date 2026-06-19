@@ -33,7 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Abstractions\Messaging\" />
     <Folder Include="Abstractions\Caching\" />
   </ItemGroup>
 

@@ -3,12 +3,14 @@ using FoodRush.Application.Abstractions.Notifications;
 using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Abstractions.Storage;
 using FoodRush.Application.Common.Settings;
+using FoodRush.Domain.Restaurants;
 using FoodRush.Infrastructure.Authentication;
 using FoodRush.Infrastructure.Authorization;
 using FoodRush.Infrastructure.BackgroundJobs;
 using FoodRush.Infrastructure.Notifications;
 using FoodRush.Infrastructure.Notifications.Templates;
 using FoodRush.Infrastructure.Persistence;
+using FoodRush.Infrastructure.Persistence.Repositories;
 using FoodRush.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -60,6 +62,8 @@ public static class DependencyInjection
                 Expiration = TimeSpan.FromMinutes(30)
             };
         });
+
+        services.AddScoped<IRestaurantRepository, RestaurantRepository>();
 
         return services;
     }

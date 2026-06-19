@@ -2,4 +2,7 @@
 
 namespace FoodRush.Domain.Common;
 
-public interface IDomainEvent : INotification;
+public interface IDomainEvent : INotification
+{
+    Guid Id { get; init; }
+}
