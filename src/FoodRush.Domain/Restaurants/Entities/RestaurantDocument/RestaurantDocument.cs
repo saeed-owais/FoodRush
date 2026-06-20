@@ -12,19 +12,21 @@ public sealed class RestaurantDocument : Entity<DocumentId>
     internal RestaurantDocument(
        RestaurantId restaurantId,
        DocumentType type,
-       FileUrl fileUrl)
+       FileUrl fileUrl,
+       PublicId publicId)
     {
         Id = new DocumentId(Guid.CreateVersion7());
         RestaurantId = restaurantId;
         Type = type;
         FileUrl = fileUrl;
+        PublicId = publicId;
         Status = DocumentStatus.Draft;
     }
 
     public RestaurantId RestaurantId { get; private set; }
     public FileUrl FileUrl { get; private set; }
+    public PublicId PublicId { get; private set; }
     public DocumentType Type { get; private set; }
-
     public DocumentStatus Status { get; private set; }
 
     internal Result Approve()

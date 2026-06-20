@@ -100,10 +100,15 @@ public static class RestaurantErrors
             "Restaurant.Document.CanOnlyBeMarkedUnderReviewWhileDraft",
             "The specified document can only be marked as under review while it is in the Draft state.");
 
-    public static Error NotRestaurantOwner =
+    public static readonly Error NotRestaurantOwner =
         Error.Validation(
             "Restaurant.Owner.Invalid",
             "The specified user is not the owner of the restaurant.");
+
+    public static readonly Error InvalidDocumentPublicId =
+        Error.Validation(
+            "Restaurant.Document.InvalidPublicId",
+            "The specified document public ID is invalid.");
 
     public static Error NotFound(RestaurantId restaurantId)
     {

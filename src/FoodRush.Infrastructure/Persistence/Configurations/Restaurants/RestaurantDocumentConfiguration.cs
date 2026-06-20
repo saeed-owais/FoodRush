@@ -24,6 +24,14 @@ internal sealed class RestaurantDocumentConfiguration
                 id => id.Value,
                 value => new RestaurantId(value));
 
+        builder.OwnsOne(d => d.PublicId, publicId =>
+        {
+            publicId.Property(p => p.Value)
+                .HasColumnName("PublicId")
+                .HasMaxLength(255)
+                .IsRequired();
+        });
+
         builder.OwnsOne(d => d.FileUrl, fileUrl =>
         {
             fileUrl.Property(f => f.Url)

@@ -41,8 +41,8 @@ public class RestaurantsController(ISender sender) : ControllerBase
 
         return result.Match(
             success => Created(
-                $"api/restaurant/{success.RestaurantId}/documents/{success.Id}",
-                new { DocumentId = success.Id }),
+                $"api/restaurant/{success.RestaurantId}/documents/{success.Id.Value}",
+                new { DocumentId = success.Id.Value }),
             error => error.Problem());
     }
 }

@@ -66,7 +66,10 @@ internal sealed class UploadDocumentCommandHandler
                 fileUrlResult.Error);
         }
 
-        var documentResult = restaurant.UploadDocument(request.DocumentType, fileUrlResult.Value);
+        var documentResult = restaurant.UploadDocument(
+            request.DocumentType,
+            fileUrlResult.Value,
+            PublicId.Create(uploadResult.Value.PublicId).Value);
 
         if (documentResult.IsFailure)
         {
