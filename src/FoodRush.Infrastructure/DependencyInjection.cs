@@ -1,4 +1,5 @@
-﻿using FoodRush.Application.Abstractions.Authentication;
+﻿using Amazon.S3;
+using FoodRush.Application.Abstractions.Authentication;
 using FoodRush.Application.Abstractions.Notifications;
 using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Abstractions.Storage;
@@ -18,6 +19,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SendGrid;
 using System.Security.Claims;
@@ -42,13 +44,10 @@ public static class DependencyInjection
             .AddBackgroundJobs(connectionString)
             .AddAuthorization()
             .AddJwtAuthorization()
-            .AddNotifications(configuration);
+            .AddNotifications(configuration)
+            .AddStorageServices(configuration);
 
         services.Configure<FrontendSettings>(configuration.GetSection(FrontendSettings.SectionName));
-
-        services.Configure<CloudinarySettings>(configuration.GetSection(CloudinarySettings.SectionName));
-
-        services.AddScoped<IFileStorageService, CloudinaryFileStorageService>();
 
         services.AddStackExchangeRedisCache(options =>
         {
@@ -233,6 +232,36 @@ public static class DependencyInjection
         services.AddSingleton<ISendGridClient>(
             new SendGridClient(
                 sendGridSettings.ApiKey));
+
+        return services;
+    }
+
+    public static IServiceCollection AddStorageServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<CloudinarySettings>(configuration.GetSection(CloudinarySettings.SectionName));
+
+        services.Configure<CloudflareR2Settings>(configuration.GetSection(CloudflareR2Settings.SectionName));
+
+        services.AddScoped<IFileStorageService, CloudinaryFileStorageService>();
+
+        services.AddScoped<IDocumentStorageService, CloudflareR2DocumentStorageService>();
+
+        services.AddSingleton<IAmazonS3>(sp =>
+        {
+            var settings = sp.GetRequiredService<IOptions<CloudflareR2Settings>>().Value;
+
+            var config = new AmazonS3Config
+            {
+                ServiceURL = settings.Endpoint,
+                ForcePathStyle = true,
+                AuthenticationRegion = "auto"
+            };
+
+            return new AmazonS3Client(
+                settings.AccessKey,
+                settings.SecretKey,
+                config);
+        });
 
         return services;
     }

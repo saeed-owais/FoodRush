@@ -75,11 +75,11 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         return restaurant;
     }
 
-    public Result UploadDocument(DocumentType documentType, FileUrl fileUrl)
+    public Result<RestaurantDocument> UploadDocument(DocumentType documentType, FileUrl fileUrl)
     {
         if (Status != RestaurantStatus.Draft)
         {
-            return Result.Failure(
+            return Result.Failure<RestaurantDocument>(
                 RestaurantErrors.DocumentsCanOnlyBeUploadedInDraftState);
         }
 
@@ -87,7 +87,14 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
 
         if (existingDocument is not null)
         {
-            return existingDocument.Replace(fileUrl);
+            var result = existingDocument.Replace(fileUrl);
+
+            if (result.IsFailure)
+            {
+                return Result.Failure<RestaurantDocument>(result.Error);
+            }
+
+            return Result.Success(existingDocument);
         }
 
         var document = new RestaurantDocument(Id, documentType, fileUrl);
@@ -100,7 +107,7 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
             document.Id,
             document.Type));
 
-        return Result.Success();
+        return document;
     }
 
     public Result SubmitForReview()

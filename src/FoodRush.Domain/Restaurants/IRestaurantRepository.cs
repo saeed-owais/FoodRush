@@ -9,5 +9,8 @@ public interface IRestaurantRepository
 
     Task<Restaurant?> GetByIdAsync(RestaurantId restaurantId, CancellationToken cancellationToken);
 
+    Task<Restaurant?> GetWithDocumentsAsync(RestaurantId restaurantId, CancellationToken cancellationToken);
+
     Task<Restaurant?> GetByOwnerIdAsync(UserId ownerId, CancellationToken cancellationToken);
+
 }

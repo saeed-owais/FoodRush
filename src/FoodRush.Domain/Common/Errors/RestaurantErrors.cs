@@ -1,6 +1,8 @@
-﻿namespace FoodRush.Domain.Common.Errors;
+﻿using FoodRush.Domain.Restaurants.ValueObjects;
 
-internal static class RestaurantErrors
+namespace FoodRush.Domain.Common.Errors;
+
+public static class RestaurantErrors
 {
     public static readonly Error NameIsRequired =
         Error.Validation("Restaurant.Name.Required", "Restaurant name is required.");
@@ -97,4 +99,16 @@ internal static class RestaurantErrors
         Error.Validation(
             "Restaurant.Document.CanOnlyBeMarkedUnderReviewWhileDraft",
             "The specified document can only be marked as under review while it is in the Draft state.");
+
+    public static Error NotRestaurantOwner =
+        Error.Validation(
+            "Restaurant.Owner.Invalid",
+            "The specified user is not the owner of the restaurant.");
+
+    public static Error NotFound(RestaurantId restaurantId)
+    {
+        return Error.NotFound(
+            "Restaurant.NotFound",
+            $"Restaurant with id {restaurantId.Value} not found.");
+    }
 }
