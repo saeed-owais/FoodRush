@@ -19,20 +19,24 @@ internal sealed class CloudflareR2DocumentStorageService
     private readonly CloudflareR2Settings _settings;
     private readonly IAmazonS3 _s3Client;
     private readonly ResiliencePipeline _uploadPipeline;
+    private readonly ResiliencePipeline _removePipeline;
     private readonly ILogger<CloudflareR2DocumentStorageService> _logger;
 
     public CloudflareR2DocumentStorageService(
         IAmazonS3 s3Client,
         IOptions<CloudflareR2Settings> options,
         ILogger<CloudflareR2DocumentStorageService> logger,
-        ResiliencePipelineProvider<string> uploadPipelineProvider)
+        ResiliencePipelineProvider<string> pipelineProvider)
     {
         _s3Client = s3Client;
         _settings = options.Value;
         _logger = logger;
 
-        _uploadPipeline = uploadPipelineProvider
+        _uploadPipeline = pipelineProvider
             .GetPipeline(PipelineNames.R2Upload);
+
+        _removePipeline = pipelineProvider
+            .GetPipeline(PipelineNames.R2Remove);
     }
 
     public async Task<Result<UploadResponse>> UploadAsync(
@@ -136,10 +140,17 @@ internal sealed class CloudflareR2DocumentStorageService
 
         try
         {
-            var response = await _s3Client.DeleteObjectAsync(
-                _settings.BucketName,
-                publicId,
-                cancellationToken);
+            var response = await _removePipeline.ExecuteAsync(async token =>
+            {
+                return await _s3Client.DeleteObjectAsync(
+                    new DeleteObjectRequest
+                    {
+                        BucketName = _settings.BucketName,
+                        Key = publicId
+                    },
+                    token);
+
+            }, cancellationToken);
 
             if (response.HttpStatusCode is
                 HttpStatusCode.OK or HttpStatusCode.NoContent)
@@ -170,6 +181,18 @@ internal sealed class CloudflareR2DocumentStorageService
                 Error.Problem(
                     "CloudflareR2DocumentStorageService.DeleteAsync",
                     "Failed to delete file."));
+        }
+        catch (TimeoutRejectedException ex)
+        {
+            _logger.LogError(
+                ex,
+                "Delete operation timed out for {PublicId}",
+                publicId);
+
+            return Result.Failure(
+                Error.Problem(
+                    "CloudflareR2DocumentStorageService.Timeout",
+                    "Delete operation timed out."));
         }
     }
 

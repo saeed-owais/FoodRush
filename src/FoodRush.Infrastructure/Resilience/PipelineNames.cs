@@ -3,4 +3,5 @@
 internal static class PipelineNames
 {
     public const string R2Upload = "r2-upload";
+    public const string R2Remove = "r2-remove";
 }

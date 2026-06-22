@@ -45,6 +45,36 @@ internal static class ResilienceDependencyInjection
                     TimeSpan.FromSeconds(30));
             });
 
+        services.AddResiliencePipeline(PipelineNames.R2Remove,
+            (builder, context) =>
+            {
+                var logger = context.ServiceProvider
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("R2RemovePipeline");
+
+                builder.AddRetry(
+                    new RetryStrategyOptions
+                    {
+                        MaxRetryAttempts = 3,
+                        BackoffType = DelayBackoffType.Exponential,
+                        Delay = TimeSpan.FromSeconds(1),
+                        UseJitter = true,
+                        OnRetry = args =>
+                        {
+                            logger.LogWarning(
+                            "Retry attempt {AttemptNumber} for Cloudflare R2 remove",
+                            args.AttemptNumber);
+                            return default;
+                        },
+                        ShouldHandle = new PredicateBuilder()
+                            .Handle<AmazonS3Exception>()
+                            .Handle<TimeoutRejectedException>()
+                    });
+
+                builder.AddTimeout(
+                    TimeSpan.FromSeconds(10));
+            });
+
         return services;
     }
 }
