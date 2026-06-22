@@ -12,6 +12,7 @@ using FoodRush.Infrastructure.Notifications;
 using FoodRush.Infrastructure.Notifications.Templates;
 using FoodRush.Infrastructure.Persistence;
 using FoodRush.Infrastructure.Persistence.Repositories;
+using FoodRush.Infrastructure.Resilience;
 using FoodRush.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -45,7 +46,8 @@ public static class DependencyInjection
             .AddAuthorization()
             .AddJwtAuthorization()
             .AddNotifications(configuration)
-            .AddStorageServices(configuration);
+            .AddStorageServices(configuration)
+            .AddResilience();
 
         services.Configure<FrontendSettings>(configuration.GetSection(FrontendSettings.SectionName));
 
