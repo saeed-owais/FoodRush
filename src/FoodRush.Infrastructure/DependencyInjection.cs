@@ -2,6 +2,7 @@
 using FoodRush.Application.Abstractions.Authentication;
 using FoodRush.Application.Abstractions.Notifications;
 using FoodRush.Application.Abstractions.Persistence;
+using FoodRush.Application.Abstractions.Persistence.Queries;
 using FoodRush.Application.Abstractions.Storage;
 using FoodRush.Application.Common.Settings;
 using FoodRush.Domain.Restaurants;
@@ -11,6 +12,7 @@ using FoodRush.Infrastructure.BackgroundJobs;
 using FoodRush.Infrastructure.Notifications;
 using FoodRush.Infrastructure.Notifications.Templates;
 using FoodRush.Infrastructure.Persistence;
+using FoodRush.Infrastructure.Persistence.Queries;
 using FoodRush.Infrastructure.Persistence.Repositories;
 using FoodRush.Infrastructure.Resilience;
 using FoodRush.Infrastructure.Storage;
@@ -47,7 +49,8 @@ public static class DependencyInjection
             .AddJwtAuthorization()
             .AddNotifications(configuration)
             .AddStorageServices(configuration)
-            .AddResilience();
+            .AddResilience()
+            .AddDapperQueries();
 
         services.Configure<FrontendSettings>(configuration.GetSection(FrontendSettings.SectionName));
 
@@ -264,6 +267,14 @@ public static class DependencyInjection
                 settings.SecretKey,
                 config);
         });
+
+        return services;
+    }
+
+    public static IServiceCollection AddDapperQueries(this IServiceCollection services)
+    {
+        services.AddScoped<IRestaurantQueries, RestaurantQueries>();
+        services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
 
         return services;
     }
