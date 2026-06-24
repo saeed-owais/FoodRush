@@ -1,6 +1,7 @@
 ﻿using FoodRush.API.Extensions;
 using FoodRush.API.ViewModels;
 using FoodRush.Application.Features.Restaurants.RegisterRestaurant;
+using FoodRush.Application.Features.Restaurants.SubmitForReview;
 using FoodRush.Application.Features.Restaurants.UploadDocument;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -43,6 +44,18 @@ public class RestaurantsController(ISender sender) : ControllerBase
             success => Created(
                 $"api/restaurant/{success.RestaurantId}/documents/{success.Id.Value}",
                 new { DocumentId = success.Id.Value }),
+            error => error.Problem());
+    }
+
+    [Authorize]
+    [HttpPost("{restaurantId}/review")]
+    public async Task<IActionResult> SubmitForReview(Guid restaurantId, CancellationToken cancellationToken)
+    {
+        var command = new SubmitForReviewCommand(restaurantId);
+        var result = await sender.Send(command, cancellationToken);
+
+        return result.Match(
+            Ok,
             error => error.Problem());
     }
 }

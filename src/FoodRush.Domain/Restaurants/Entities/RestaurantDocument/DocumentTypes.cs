@@ -8,9 +8,9 @@ public static class DocumentTypes
             DocumentType.BankAccountProof,
             DocumentType.CommercialRegistration,
             DocumentType.FoodLicense,
-            DocumentType.HealthCertificate,
-            DocumentType.NationalId,
-            DocumentType.OwnershipContract,
-            DocumentType.TaxCard
+            //DocumentType.HealthCertificate,
+            //DocumentType.NationalId,
+            //DocumentType.OwnershipContract,
+            //DocumentType.TaxCard
         };
 }

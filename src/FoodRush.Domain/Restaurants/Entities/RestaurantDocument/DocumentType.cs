@@ -2,11 +2,11 @@
 
 public enum DocumentType
 {
-    CommercialRegistration,
-    TaxCard,
-    NationalId,
-    FoodLicense,
     BankAccountProof,
+    CommercialRegistration,
+    FoodLicense,
+    HealthCertificate,
+    NationalId,
     OwnershipContract,
-    HealthCertificate
+    TaxCard
 }
