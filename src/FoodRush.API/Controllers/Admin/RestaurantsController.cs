@@ -1,6 +1,6 @@
 ﻿using FoodRush.API.Extensions;
 using FoodRush.Application.Common.Authorization;
-using FoodRush.Application.Features.Administration.Restaurants.Queries.GetPendingRestaurants;
+using FoodRush.Application.Features.Administration.Restaurants.Queries.SearchRestaurants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,15 +12,15 @@ namespace FoodRush.API.Controllers.Admin;
 [Authorize(Roles = $"{Roles.SuperAdmin}, {Roles.Admin}")]
 public class RestaurantsController(IMediator sender) : ControllerBase
 {
-    [HttpGet("drafts")]
-    public async Task<IActionResult> GetDraftRestaurants(
-        [FromQuery] GetDraftRestaurantsQuery query,
+    [HttpGet()]
+    public async Task<IActionResult> GetRestaurants(
+        [FromQuery] SearchRestaurantsQuery query,
         CancellationToken cancellation)
     {
         var result = await sender.Send(query, cancellation);
 
         return result.Match(
-            success => Ok(success),
+            Ok,
             failure => failure.Problem()
         );
     }

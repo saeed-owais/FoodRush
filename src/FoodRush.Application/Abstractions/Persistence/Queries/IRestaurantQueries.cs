@@ -1,11 +1,11 @@
 ﻿using FoodRush.Application.Common.Models;
-using FoodRush.Application.Features.Administration.Restaurants.Queries;
+using FoodRush.Application.Features.Administration.Restaurants.Queries.SearchRestaurants;
 
 namespace FoodRush.Application.Abstractions.Persistence.Queries;
 
 public interface IRestaurantQueries
 {
     Task<PaginatedResponse<RestaurantDto>> SearchRestaurantsAsync(
-        SearchRestaurantsDto request,
+        SearchRestaurantsQuery request,
         CancellationToken cancellationToken);
 }

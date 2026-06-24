@@ -2,7 +2,7 @@
 using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Abstractions.Persistence.Queries;
 using FoodRush.Application.Common.Models;
-using FoodRush.Application.Features.Administration.Restaurants.Queries;
+using FoodRush.Application.Features.Administration.Restaurants.Queries.SearchRestaurants;
 
 namespace FoodRush.Infrastructure.Persistence.Queries;
 
@@ -14,7 +14,7 @@ internal sealed class RestaurantQueries : IRestaurantQueries
         _sqlConnectionFactory = sqlConnectionFactory;
     }
     public async Task<PaginatedResponse<RestaurantDto>> SearchRestaurantsAsync(
-       SearchRestaurantsDto request,
+       SearchRestaurantsQuery request,
        CancellationToken cancellationToken)
     {
         using var connection = _sqlConnectionFactory.CreateConnection();

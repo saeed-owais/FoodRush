@@ -1,4 +1,4 @@
-﻿namespace FoodRush.Application.Features.Administration.Restaurants.Queries;
+﻿namespace FoodRush.Application.Features.Administration.Restaurants.Queries.SearchRestaurants;
 
 public sealed record RestaurantDto(
     Guid Id,
