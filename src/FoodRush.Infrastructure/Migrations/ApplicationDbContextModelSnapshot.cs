@@ -443,6 +443,72 @@ namespace FoodRush.Infrastructure.Migrations
                     b.ToTable("UserRoles", "identity");
                 });
 
+            modelBuilder.Entity("FoodRush.Domain.Restaurants.Entities.RestaurantDocument.RestaurantDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.ToTable("RestaurantDocuments", "Restaurants");
+                });
+
+            modelBuilder.Entity("FoodRush.Domain.Restaurants.Restaurant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Restaurants", "Restaurants");
+                });
+
             modelBuilder.Entity("FoodRush.Domain.Entities.Identity.RefreshToken", b =>
                 {
                     b.HasOne("FoodRush.Domain.Entities.Identity.User", "User")
@@ -511,6 +577,164 @@ namespace FoodRush.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("FoodRush.Domain.Restaurants.Entities.RestaurantDocument.RestaurantDocument", b =>
+                {
+                    b.HasOne("FoodRush.Domain.Restaurants.Restaurant", null)
+                        .WithMany("Documents")
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("FoodRush.Domain.Restaurants.Entities.RestaurantDocument.FileUrl", "FileUrl", b1 =>
+                        {
+                            b1.Property<Guid>("RestaurantDocumentId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Url")
+                                .IsRequired()
+                                .HasMaxLength(2048)
+                                .HasColumnType("nvarchar(2048)")
+                                .HasColumnName("FileUrl");
+
+                            b1.HasKey("RestaurantDocumentId");
+
+                            b1.ToTable("RestaurantDocuments", "Restaurants");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RestaurantDocumentId");
+                        });
+
+                    b.OwnsOne("FoodRush.Domain.Restaurants.Entities.RestaurantDocument.PublicId", "PublicId", b1 =>
+                        {
+                            b1.Property<Guid>("RestaurantDocumentId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(255)
+                                .HasColumnType("nvarchar(255)")
+                                .HasColumnName("PublicId");
+
+                            b1.HasKey("RestaurantDocumentId");
+
+                            b1.ToTable("RestaurantDocuments", "Restaurants");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RestaurantDocumentId");
+                        });
+
+                    b.Navigation("FileUrl")
+                        .IsRequired();
+
+                    b.Navigation("PublicId")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FoodRush.Domain.Restaurants.Restaurant", b =>
+                {
+                    b.OwnsOne("FoodRush.Domain.Restaurants.ValueObjects.AverageRating", "AverageRating", b1 =>
+                        {
+                            b1.Property<Guid>("RestaurantId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<double>("Value")
+                                .HasColumnType("float")
+                                .HasColumnName("AverageRating");
+
+                            b1.HasKey("RestaurantId");
+
+                            b1.ToTable("Restaurants", "Restaurants");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RestaurantId");
+                        });
+
+                    b.OwnsOne("FoodRush.Domain.Restaurants.ValueObjects.DeliveryRadiusKm", "DeliveryRadiusKm", b1 =>
+                        {
+                            b1.Property<Guid>("RestaurantId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<double>("Value")
+                                .HasColumnType("float")
+                                .HasColumnName("DeliveryRadiusKm");
+
+                            b1.HasKey("RestaurantId");
+
+                            b1.ToTable("Restaurants", "Restaurants");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RestaurantId");
+                        });
+
+                    b.OwnsOne("FoodRush.Domain.Restaurants.ValueObjects.Latitude", "Latitude", b1 =>
+                        {
+                            b1.Property<Guid>("RestaurantId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<double>("Value")
+                                .HasColumnType("float")
+                                .HasColumnName("Latitude");
+
+                            b1.HasKey("RestaurantId");
+
+                            b1.ToTable("Restaurants", "Restaurants");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RestaurantId");
+                        });
+
+                    b.OwnsOne("FoodRush.Domain.Restaurants.ValueObjects.Longitude", "Longitude", b1 =>
+                        {
+                            b1.Property<Guid>("RestaurantId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<double>("Value")
+                                .HasColumnType("float")
+                                .HasColumnName("Longitude");
+
+                            b1.HasKey("RestaurantId");
+
+                            b1.ToTable("Restaurants", "Restaurants");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RestaurantId");
+                        });
+
+                    b.OwnsOne("FoodRush.Domain.Restaurants.ValueObjects.Name", "Name", b1 =>
+                        {
+                            b1.Property<Guid>("RestaurantId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)")
+                                .HasColumnName("Name");
+
+                            b1.HasKey("RestaurantId");
+
+                            b1.ToTable("Restaurants", "Restaurants");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RestaurantId");
+                        });
+
+                    b.Navigation("AverageRating")
+                        .IsRequired();
+
+                    b.Navigation("DeliveryRadiusKm")
+                        .IsRequired();
+
+                    b.Navigation("Latitude")
+                        .IsRequired();
+
+                    b.Navigation("Longitude")
+                        .IsRequired();
+
+                    b.Navigation("Name")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("FoodRush.Domain.Entities.Identity.Permission", b =>
                 {
                     b.Navigation("RolePermissions");
@@ -532,6 +756,11 @@ namespace FoodRush.Infrastructure.Migrations
                     b.Navigation("UserPermissions");
 
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("FoodRush.Domain.Restaurants.Restaurant", b =>
+                {
+                    b.Navigation("Documents");
                 });
 #pragma warning restore 612, 618
         }

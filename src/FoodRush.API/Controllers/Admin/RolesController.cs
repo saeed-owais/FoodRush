@@ -1,7 +1,7 @@
 ﻿using FoodRush.API.Attributes;
 using FoodRush.API.Extensions;
 using FoodRush.API.ViewModels;
-using FoodRush.Application.Common;
+using FoodRush.Domain.Common;
 using FoodRush.Application.Common.Authorization;
 using FoodRush.Application.Features.Administration.Roles;
 using FoodRush.Application.Features.Administration.Roles.AssignPermissionToRole;

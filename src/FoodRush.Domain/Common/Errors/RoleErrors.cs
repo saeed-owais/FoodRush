@@ -1,6 +1,6 @@
-﻿namespace FoodRush.Application.Common.Errors;
+﻿namespace FoodRush.Domain.Common.Errors;
 
-internal static class RoleErrors
+public static class RoleErrors
 {
     public static readonly Error CustomerRoleNotFound =
         Error.Failure(

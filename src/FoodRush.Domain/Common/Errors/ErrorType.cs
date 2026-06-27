@@ -1,4 +1,4 @@
-﻿namespace FoodRush.Application.Common.Errors
+﻿namespace FoodRush.Domain.Common.Errors
 {
     public enum ErrorType
     {

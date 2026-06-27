@@ -1,6 +1,4 @@
 ﻿using FoodRush.API.Extensions;
-using FoodRush.Application.Common;
-using FoodRush.Application.Common.Errors;
 using FoodRush.Application.Features.Authentication.ChangeEmail;
 using FoodRush.Application.Features.Authentication.ChangePassword;
 using FoodRush.Application.Features.Authentication.ConfirmEmailChange;
@@ -18,6 +16,8 @@ using FoodRush.Application.Features.Authentication.Sessions.RevokeSession;
 using FoodRush.Application.Features.Authentication.UpdateProfile;
 using FoodRush.Application.Features.Authentication.UploadAvatar;
 using FoodRush.Application.Features.Authentication.VerifyEmail;
+using FoodRush.Domain.Common;
+using FoodRush.Domain.Common.Errors;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
