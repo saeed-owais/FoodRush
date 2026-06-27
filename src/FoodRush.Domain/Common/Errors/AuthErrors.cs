@@ -1,6 +1,6 @@
-﻿namespace FoodRush.Application.Common.Errors;
+﻿namespace FoodRush.Domain.Common.Errors;
 
-internal static class AuthErrors
+public static class AuthErrors
 {
     public static readonly Error InvalidCredentials =
         Error.Unauthorized(

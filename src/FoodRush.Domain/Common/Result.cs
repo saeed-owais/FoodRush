@@ -1,7 +1,7 @@
-﻿using FoodRush.Application.Common.Errors;
+﻿using FoodRush.Domain.Common.Errors;
 using System.Diagnostics.CodeAnalysis;
 
-namespace FoodRush.Application.Common
+namespace FoodRush.Domain.Common
 {
     public class Result
     {
@@ -32,6 +32,11 @@ namespace FoodRush.Application.Common
 
         public static Result<TValue> Failure<TValue>(Error error) =>
             new(default, false, error);
+
+        internal static Result<T> Failure<T>(object invalidLongitude)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class Result<TValue> : Result

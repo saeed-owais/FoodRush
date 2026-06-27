@@ -1,5 +1,5 @@
-﻿using FoodRush.Application.Common;
-using FoodRush.Application.Common.Errors;
+﻿using FoodRush.Domain.Common;
+using FoodRush.Domain.Common.Errors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FoodRush.API.Extensions

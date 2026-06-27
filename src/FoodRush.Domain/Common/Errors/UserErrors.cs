@@ -1,6 +1,6 @@
-﻿namespace FoodRush.Application.Common.Errors;
+﻿namespace FoodRush.Domain.Common.Errors;
 
-internal static class UserErrors
+public static class UserErrors
 {
     public static Error NotFound(Guid userId)
         => Error.NotFound(
@@ -37,9 +37,9 @@ internal static class UserErrors
             "User.AlreadyBanned",
             $"User with ID {userId} is already banned until {lockoutEnd}.");
 
-    internal static Error NotDeleted(Guid userId)
+    public static Error NotDeleted(Guid userId)
     => Error.Conflict("User.NotDeleted", $"User with ID {userId} is not deleted");
 
-    internal static Error NotBanned(Guid userId)
+    public static Error NotBanned(Guid userId)
     => Error.Conflict("User.NotBanned", $"User with ID {userId} is not banned");
 }

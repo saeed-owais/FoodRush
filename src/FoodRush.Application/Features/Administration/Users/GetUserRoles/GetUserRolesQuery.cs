@@ -1,4 +1,4 @@
-﻿using FoodRush.Application.Common;
+﻿using FoodRush.Domain.Common;
 using MediatR;
 
 namespace FoodRush.Application.Features.Administration.Users.GetUserRoles;

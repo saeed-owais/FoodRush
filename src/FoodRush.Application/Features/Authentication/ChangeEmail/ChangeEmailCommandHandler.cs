@@ -2,9 +2,9 @@
 using FoodRush.Application.Abstractions.BackgroundJobs;
 using FoodRush.Application.Abstractions.Notifications;
 using FoodRush.Application.Abstractions.Persistence;
-using FoodRush.Application.Common;
-using FoodRush.Application.Common.Errors;
 using FoodRush.Application.Common.Settings;
+using FoodRush.Domain.Common;
+using FoodRush.Domain.Common.Errors;
 using FoodRush.Domain.Entities.Identity;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
