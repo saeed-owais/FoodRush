@@ -2,7 +2,10 @@
 using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Abstractions.Persistence.Queries;
 using FoodRush.Application.Common.Models;
+using FoodRush.Application.Features.Administration.Restaurants.Queries.GetRestaurantDetailsForReview;
 using FoodRush.Application.Features.Administration.Restaurants.Queries.SearchRestaurants;
+using FoodRush.Domain.Restaurants.Enums;
+using FoodRush.Domain.Restaurants.ValueObjects;
 
 namespace FoodRush.Infrastructure.Persistence.Queries;
 
@@ -13,6 +16,58 @@ internal sealed class RestaurantQueries : IRestaurantQueries
     {
         _sqlConnectionFactory = sqlConnectionFactory;
     }
+
+
+    public async Task<RestaurantDetailsForReviewResponse?> GetRestaurantDetailsForReviewAsync(
+        RestaurantId restaurantId,
+        CancellationToken cancellationToken)
+    {
+        using var connection = _sqlConnectionFactory.CreateConnection();
+
+        const string sql = """
+        SELECT
+            r.Id,
+            r.Name,
+            u.DisplayName AS OwnerName,
+            u.Email AS OwnerEmail,
+            r.Latitude,
+            r.Longitude,
+            r.DeliveryRadiusKm
+        FROM Restaurants.Restaurants r
+        INNER JOIN [identity].Users u
+            ON u.Id = r.OwnerId
+        WHERE r.Id = @RestaurantId
+        AND r.Status = @Status;
+
+        SELECT
+            d.Id,
+            d.Type,
+            d.Status,
+            d.FileUrl
+        FROM Restaurants.RestaurantDocuments d
+        WHERE d.RestaurantId = @RestaurantId
+        ORDER BY d.Type;
+        """;
+
+        using var multi = await connection.QueryMultipleAsync(
+        sql,
+        new
+        {
+            RestaurantId = restaurantId.Value,
+            Status = RestaurantStatus.UnderReview.ToString()
+        });
+
+        var restaurant = await multi.ReadSingleOrDefaultAsync<RestaurantDetailsForReviewResponse>();
+
+        if (restaurant is null)
+            return null;
+
+        restaurant.Documents.AddRange(
+            await multi.ReadAsync<RestaurantDocumentResponse>());
+
+        return restaurant;
+    }
+
     public async Task<PaginatedResponse<RestaurantDto>> SearchRestaurantsAsync(
        SearchRestaurantsQuery request,
        CancellationToken cancellationToken)

@@ -1,5 +1,6 @@
 ﻿using FoodRush.API.Extensions;
 using FoodRush.Application.Common.Authorization;
+using FoodRush.Application.Features.Administration.Restaurants.Queries.GetRestaurantDetailsForReview;
 using FoodRush.Application.Features.Administration.Restaurants.Queries.SearchRestaurants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -24,4 +25,19 @@ public class RestaurantsController(IMediator sender) : ControllerBase
             failure => failure.Problem()
         );
     }
+
+    [HttpGet("{restaurantId:guid}/review")]
+    public async Task<IActionResult> GetRestaurantDetailsForReview(
+        Guid restaurantId,
+        CancellationToken cancellation)
+    {
+        var result = await sender.Send(
+            new GetRestaurantDetailsForReviewQuery(restaurantId),
+            cancellation);
+
+        return result.Match(
+            Ok,
+            failure => failure.Problem());
+    }
+
 }
