@@ -1,5 +1,6 @@
 ﻿using FoodRush.API.Extensions;
 using FoodRush.API.ViewModels;
+using FoodRush.Application.Features.Restaurants.Onboarding;
 using FoodRush.Application.Features.Restaurants.RegisterRestaurant;
 using FoodRush.Application.Features.Restaurants.SubmitForReview;
 using FoodRush.Application.Features.Restaurants.UploadDocument;
@@ -48,7 +49,7 @@ public class RestaurantsController(ISender sender) : ControllerBase
     }
 
     [Authorize]
-    [HttpPost("{restaurantId}/review")]
+    [HttpPost("{restaurantId:Guid}/review")]
     public async Task<IActionResult> SubmitForReview(Guid restaurantId, CancellationToken cancellationToken)
     {
         var command = new SubmitForReviewCommand(restaurantId);
@@ -56,6 +57,17 @@ public class RestaurantsController(ISender sender) : ControllerBase
 
         return result.Match(
             Ok,
+            error => error.Problem());
+    }
+
+    [Authorize]
+    [HttpGet("{restaurantId:Guid}/onboarding")]
+    public async Task<IActionResult> GetMyDocuments(Guid restaurantId, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetRestaurantOnboardingQuery(restaurantId), cancellationToken);
+
+        return result.Match(
+            success => Ok(success),
             error => error.Problem());
     }
 }

@@ -4,6 +4,7 @@ using FoodRush.Application.Abstractions.Persistence.Queries;
 using FoodRush.Application.Common.Models;
 using FoodRush.Application.Features.Administration.Restaurants.Queries.GetRestaurantDetailsForReview;
 using FoodRush.Application.Features.Administration.Restaurants.Queries.SearchRestaurants;
+using FoodRush.Application.Features.Restaurants.Onboarding;
 using FoodRush.Domain.Restaurants.Enums;
 using FoodRush.Domain.Restaurants.ValueObjects;
 
@@ -17,6 +18,45 @@ internal sealed class RestaurantQueries : IRestaurantQueries
         _sqlConnectionFactory = sqlConnectionFactory;
     }
 
+    public async Task<RestaurantOnboardingResponse?> GetMyRestaurantOnboardingQuery(
+        RestaurantId restaurantId,
+        CancellationToken cancellationToken)
+    {
+        using var connection = _sqlConnectionFactory.CreateConnection();
+
+        const string sql = """
+        SELECT
+            r.Id,
+            r.Name,
+            r.Status
+        From Restaurants.Restaurants r
+        WHERE r.Id = @RestaurantId;
+
+        SELECT
+            d.Id,
+            d.Type,
+            d.Status,
+            d.FileUrl,
+            d.RejectionReason
+        FROM Restaurants.RestaurantDocuments d
+        WHERE d.RestaurantId = @RestaurantId
+        ORDER BY d.Type
+        """;
+
+        using var multi =
+            await connection.QueryMultipleAsync(
+                sql,
+                new { RestaurantId = restaurantId.Value });
+
+        var restaurant = await multi.ReadSingleOrDefaultAsync<RestaurantOnboardingResponse>();
+
+        if (restaurant == null)
+            return null;
+
+        restaurant.Documents.AddRange(await multi.ReadAsync<RestaurantOnboardingDocumentResponse>());
+
+        return restaurant;
+    }
 
     public async Task<RestaurantDetailsForReviewResponse?> GetRestaurantDetailsForReviewAsync(
         RestaurantId restaurantId,
