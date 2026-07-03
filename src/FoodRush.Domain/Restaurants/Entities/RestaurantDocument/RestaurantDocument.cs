@@ -26,6 +26,7 @@ public sealed class RestaurantDocument : Entity<DocumentId>
     public RestaurantId RestaurantId { get; private set; }
     public FileUrl FileUrl { get; private set; }
     public PublicId PublicId { get; private set; }
+    public RejectionReason? RejectionReason { get; private set; }
     public DocumentType Type { get; private set; }
     public DocumentStatus Status { get; private set; }
 
@@ -50,6 +51,27 @@ public sealed class RestaurantDocument : Entity<DocumentId>
     internal void Reject()
     {
         Status = DocumentStatus.Rejected;
+    }
+    public Result Reject(string reason)
+    {
+        if (Status != DocumentStatus.UnderReview)
+        {
+            return Result.Failure(RestaurantErrors.DocumentMustBeUnderReview);
+        }
+
+        Status = DocumentStatus.Rejected;
+
+        var rejectionReason = RejectionReason.Create(reason);
+
+        if (rejectionReason.IsFailure)
+        {
+            return rejectionReason;
+        }
+
+        RejectionReason = rejectionReason.Value;
+        Status = DocumentStatus.Rejected;
+
+        return Result.Success();
     }
 
     internal Result Replace(FileUrl fileUrl)

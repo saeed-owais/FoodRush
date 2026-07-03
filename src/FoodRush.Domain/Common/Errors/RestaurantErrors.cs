@@ -110,6 +110,11 @@ public static class RestaurantErrors
             "Restaurant.Document.InvalidPublicId",
             "The specified document public ID is invalid.");
 
+    public static readonly Error InvalidDocumentRejectionReason =
+        Error.Validation(
+            "Restaurant.Document.InvalidRejectionReason",
+            "The specified document rejection reason is invalid.");
+
     public static Error NotFound(RestaurantId restaurantId)
     {
         return Error.NotFound(

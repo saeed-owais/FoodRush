@@ -191,7 +191,7 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         return Result.Success();
     }
 
-    public Result RejectDocument(DocumentId documentId)
+    public Result RejectDocument(DocumentId documentId, string reason)
     {
         if (Status != RestaurantStatus.UnderReview)
         {
@@ -207,13 +207,12 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
                 RestaurantErrors.DocumentNotFound);
         }
 
-        if (document.Status != DocumentStatus.UnderReview)
-        {
-            return Result.Failure(
-                RestaurantErrors.DocumentMustBeUnderReview);
-        }
+        var result = document.Reject(reason);
 
-        document.Reject();
+        if (result.IsFailure)
+        {
+            return result;
+        }
 
         Status = RestaurantStatus.Draft;
 
