@@ -19,9 +19,8 @@ internal sealed class ApproveRestaurantDocumentCommandHandler
         var documentId = new DocumentId(request.DocumentId);
 
         var restaurant =
-            await restaurantRepository.GetWithDocumentByIdAsync(
+            await restaurantRepository.GetWithDocumentsAsync(
                 restaurantId,
-                documentId,
                 cancellationToken);
 
         if (restaurant == null)

@@ -44,6 +44,8 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
     public Latitude Latitude { get; private set; }
     public Longitude Longitude { get; private set; }
     public DeliveryRadiusKm DeliveryRadiusKm { get; private set; }
+    public DateTime? SuspendedAt { get; private set; }
+    public string? SuspensionReason { get; private set; }
     public bool IsVisible => Status == RestaurantStatus.Approved;
 
     public DateTime CreatedAt { get; set; }
@@ -179,12 +181,15 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         return result;
     }
 
-    public Result Suspend()
+    public Result Suspend(string reason)
     {
         if (Status != RestaurantStatus.Approved)
             return Result.Failure(RestaurantErrors.OnlyApprovedRestaurantsCanBeSuspended);
 
         Status = RestaurantStatus.Suspended;
+
+        SuspendedAt = DateTime.UtcNow;
+        SuspensionReason = reason;
 
         Raise(new RestaurantSuspendedDomainEvent(Guid.NewGuid(), Id));
 
@@ -256,6 +261,9 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         }
 
         Status = RestaurantStatus.Approved;
+
+        SuspendedAt = null;
+        SuspensionReason = null;
 
         Raise(new RestaurantReactivatedDomainEvent(Guid.NewGuid(), Id));
 

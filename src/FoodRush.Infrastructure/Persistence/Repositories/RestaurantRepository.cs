@@ -15,7 +15,9 @@ internal sealed class RestaurantRepository(ApplicationDbContext context) : IRest
 
     public async Task<Restaurant?> GetByIdAsync(RestaurantId restaurantId, CancellationToken cancellationToken)
     {
-        return await context.Restaurants.FirstOrDefaultAsync(r => r.Id == restaurantId, cancellationToken);
+        return await context.Restaurants
+            .AsTracking()
+            .FirstOrDefaultAsync(r => r.Id == restaurantId, cancellationToken);
     }
 
     public async Task<Restaurant?> GetByOwnerIdAsync(UserId ownerId, CancellationToken cancellationToken)
