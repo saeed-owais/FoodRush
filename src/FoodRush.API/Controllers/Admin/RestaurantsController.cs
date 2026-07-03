@@ -1,5 +1,6 @@
 ﻿using FoodRush.API.Extensions;
 using FoodRush.Application.Common.Authorization;
+using FoodRush.Application.Features.Administration.Restaurants.Commands.ApproveRestaurantDocument;
 using FoodRush.Application.Features.Administration.Restaurants.Queries.GetRestaurantDetailsForReview;
 using FoodRush.Application.Features.Administration.Restaurants.Queries.SearchRestaurants;
 using MediatR;
@@ -37,6 +38,23 @@ public class RestaurantsController(IMediator sender) : ControllerBase
 
         return result.Match(
             Ok,
+            failure => failure.Problem());
+    }
+
+    [HttpPost("{restaurantId:guid}/documents/{documentId:guid}/approve")]
+    public async Task<IActionResult> ApproveDocument(
+        Guid restaurantId,
+        Guid documentId,
+        CancellationToken cancellationToken)
+    {
+        var command = new ApproveRestaurantDocumentCommand(
+            restaurantId,
+            documentId);
+
+        var result = await sender.Send(command, cancellationToken);
+
+        return result.Match(
+            NoContent,
             failure => failure.Problem());
     }
 

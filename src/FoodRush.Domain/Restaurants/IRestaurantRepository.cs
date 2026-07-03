@@ -1,4 +1,5 @@
 ﻿using FoodRush.Domain.Entities.Identity;
+using FoodRush.Domain.Restaurants.Entities.RestaurantDocument;
 using FoodRush.Domain.Restaurants.ValueObjects;
 
 namespace FoodRush.Domain.Restaurants;
@@ -10,6 +11,8 @@ public interface IRestaurantRepository
     Task<Restaurant?> GetByIdAsync(RestaurantId restaurantId, CancellationToken cancellationToken);
 
     Task<Restaurant?> GetWithDocumentsAsync(RestaurantId restaurantId, CancellationToken cancellationToken);
+
+    Task<Restaurant?> GetWithDocumentByIdAsync(RestaurantId restaurantId, DocumentId documentId, CancellationToken cancellationToken);
 
     Task<Restaurant?> GetByOwnerIdAsync(UserId ownerId, CancellationToken cancellationToken);
 
