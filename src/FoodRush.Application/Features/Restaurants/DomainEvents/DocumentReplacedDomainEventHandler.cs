@@ -7,9 +7,10 @@ namespace FoodRush.Application.Features.Restaurants.DomainEvents;
 
 internal class DocumentReplacedDomainEventHandler
     (IDocumentStorageService storageService,
-    ILogger<DocumentReplacedDomainEventHandler> logger) : IDomainEventHandler<RestaurantDocumentReplacedDomainEvent>
+    ILogger<DocumentReplacedDomainEventHandler> logger) :
+    IDomainEventHandler<RestaurantDocumentFileReplacedDomainEvent>
 {
-    public async Task Handle(RestaurantDocumentReplacedDomainEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(RestaurantDocumentFileReplacedDomainEvent notification, CancellationToken cancellationToken)
     {
         var deleteResult = await storageService.DeleteAsync(notification.OldDocumentPublicId.Value, cancellationToken);
 

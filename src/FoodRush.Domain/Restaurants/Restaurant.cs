@@ -89,17 +89,20 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
 
         if (existingDocument is not null)
         {
-            var result = existingDocument.Replace(fileUrl);
+            var oldPublicId = existingDocument.PublicId;
+
+            var result = existingDocument.Replace(fileUrl, publicId);
 
             if (result.IsFailure)
             {
                 return Result.Failure<RestaurantDocument>(result.Error);
             }
 
-            Raise(new RestaurantDocumentReplacedDomainEvent(
+            Raise(new RestaurantDocumentFileReplacedDomainEvent(
                 Guid.NewGuid(),
                 Id,
-                existingDocument.PublicId,
+                existingDocument.Id,
+                oldPublicId,
                 publicId));
 
             return Result.Success(existingDocument);
@@ -226,7 +229,23 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         return Result.Success();
     }
 
-    public Result ResubmitDocument(DocumentId documentId, FileUrl fileUrl)
+    public Result EnsureDocumentCanBeResubmitted(DocumentId documentId)
+    {
+        if (Status != RestaurantStatus.Draft)
+        {
+            return Result.Failure(RestaurantErrors.RestaurantMustBeInDraftState);
+        }
+
+        var document = GetDocument(documentId);
+
+        if (document is null)
+        {
+            return Result.Failure(RestaurantErrors.DocumentNotFound);
+        }
+
+        return document.CanResubmit();
+    }
+    public Result ResubmitDocument(DocumentId documentId, FileUrl fileUrl, PublicId publicId)
     {
         if (Status != RestaurantStatus.Draft)
         {
@@ -242,11 +261,18 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
                 RestaurantErrors.DocumentNotFound);
         }
 
-        var result = document.Resubmit(fileUrl);
+        var oldPublicId = document.PublicId;
+
+        var result = document.Resubmit(fileUrl, publicId);
 
         if (result.IsSuccess)
         {
-            Raise(new RestaurantDocumentResubmittedDomainEvent(Guid.NewGuid(), Id, document.Id));
+            Raise(new RestaurantDocumentFileReplacedDomainEvent(
+                Guid.NewGuid(),
+                Id,
+                document.Id,
+                oldPublicId,
+                publicId));
         }
 
         return result;

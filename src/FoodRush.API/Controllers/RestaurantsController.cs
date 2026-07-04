@@ -2,6 +2,7 @@
 using FoodRush.API.ViewModels;
 using FoodRush.Application.Features.Restaurants.Onboarding;
 using FoodRush.Application.Features.Restaurants.RegisterRestaurant;
+using FoodRush.Application.Features.Restaurants.ResubmitDocument;
 using FoodRush.Application.Features.Restaurants.SubmitForReview;
 using FoodRush.Application.Features.Restaurants.UploadDocument;
 using MediatR;
@@ -45,6 +46,31 @@ public class RestaurantsController(ISender sender) : ControllerBase
             success => Created(
                 $"api/restaurant/{success.RestaurantId}/documents/{success.Id.Value}",
                 new { DocumentId = success.Id.Value }),
+            error => error.Problem());
+    }
+
+    [Authorize]
+    [HttpPost("{restaurantId}/documents/{documentId}/resubmit")]
+    public async Task<IActionResult> ResubmitDocument(
+    Guid restaurantId,
+    Guid documentId,
+    [FromForm] ResubmitDocumentRequest request,
+    CancellationToken cancellationToken)
+    {
+        using var stream = request.FileStream.OpenReadStream();
+
+        var command = new ResubmitDocumentCommand(
+            restaurantId,
+            documentId,
+            stream,
+            request.FileStream.FileName,
+            request.FileStream.ContentType,
+            request.FileStream.Length);
+
+        var result = await sender.Send(command, cancellationToken);
+
+        return result.Match(
+            Ok,
             error => error.Problem());
     }
 

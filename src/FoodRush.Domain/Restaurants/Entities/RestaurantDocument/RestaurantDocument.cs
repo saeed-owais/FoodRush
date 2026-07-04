@@ -74,7 +74,7 @@ public sealed class RestaurantDocument : Entity<DocumentId>
         return Result.Success();
     }
 
-    internal Result Replace(FileUrl fileUrl)
+    internal Result Replace(FileUrl fileUrl, PublicId publicId)
     {
         if (Status != DocumentStatus.Draft)
         {
@@ -83,11 +83,12 @@ public sealed class RestaurantDocument : Entity<DocumentId>
         }
 
         FileUrl = fileUrl;
+        PublicId = publicId;
 
         return Result.Success();
     }
 
-    internal Result Resubmit(FileUrl fileUrl)
+    internal Result Resubmit(FileUrl fileUrl, PublicId publicId)
     {
         if (Status != DocumentStatus.Rejected)
         {
@@ -96,8 +97,19 @@ public sealed class RestaurantDocument : Entity<DocumentId>
         }
 
         FileUrl = fileUrl;
+        PublicId = publicId;
 
         Status = DocumentStatus.Draft;
+
+        return Result.Success();
+    }
+    internal Result CanResubmit()
+    {
+        if (Status != DocumentStatus.Rejected)
+        {
+            return Result.Failure(
+                RestaurantErrors.OnlyRejectedDocumentsCanBeResubmitted);
+        }
 
         return Result.Success();
     }
