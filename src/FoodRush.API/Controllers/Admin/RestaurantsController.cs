@@ -2,6 +2,7 @@
 using FoodRush.API.ViewModels;
 using FoodRush.Application.Common.Authorization;
 using FoodRush.Application.Features.Administration.Restaurants.Commands.ApproveRestaurantDocument;
+using FoodRush.Application.Features.Administration.Restaurants.Commands.ReactivateRestaurant;
 using FoodRush.Application.Features.Administration.Restaurants.Commands.RejectRestaurantDocument;
 using FoodRush.Application.Features.Administration.Restaurants.Commands.SuspendRestaurant;
 using FoodRush.Application.Features.Administration.Restaurants.Queries.GetRestaurantDetailsForReview;
@@ -84,6 +85,17 @@ public class RestaurantsController(IMediator sender) : ControllerBase
     public async Task<IActionResult> SuspendRestaurant(Guid restaurantId, SuspendRestaurantRequest request, CancellationToken cancellationToken)
     {
         var command = new SuspendRestaurantCommand(restaurantId, request.Reason);
+        var result = await sender.Send(command, cancellationToken);
+
+        return result.Match(
+            Ok,
+            error => error.Problem());
+    }
+
+    [HttpPost("{restaurantId:Guid}/reactivate")]
+    public async Task<IActionResult> ReactivateRestaurant(Guid restaurantId, CancellationToken cancellationToken)
+    {
+        var command = new ReactivateRestaurantCommand(restaurantId);
         var result = await sender.Send(command, cancellationToken);
 
         return result.Match(
