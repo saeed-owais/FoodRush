@@ -40,6 +40,14 @@ internal sealed class RestaurantDocumentConfiguration
                 .IsRequired();
         });
 
+        builder.OwnsOne(d => d.RejectionReason, ownedBuilder =>
+        {
+            ownedBuilder.Property(r => r.Value)
+                .HasColumnName("RejectionReason")
+                .HasMaxLength(500)
+                .IsRequired(false);
+        });
+
         builder.Property(d => d.Type)
             .HasConversion<string>()
             .HasMaxLength(50);

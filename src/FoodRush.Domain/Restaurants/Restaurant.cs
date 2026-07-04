@@ -44,6 +44,8 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
     public Latitude Latitude { get; private set; }
     public Longitude Longitude { get; private set; }
     public DeliveryRadiusKm DeliveryRadiusKm { get; private set; }
+    public DateTime? SuspendedAt { get; private set; }
+    public string? SuspensionReason { get; private set; }
     public bool IsVisible => Status == RestaurantStatus.Approved;
 
     public DateTime CreatedAt { get; set; }
@@ -87,17 +89,20 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
 
         if (existingDocument is not null)
         {
-            var result = existingDocument.Replace(fileUrl);
+            var oldPublicId = existingDocument.PublicId;
+
+            var result = existingDocument.Replace(fileUrl, publicId);
 
             if (result.IsFailure)
             {
                 return Result.Failure<RestaurantDocument>(result.Error);
             }
 
-            Raise(new RestaurantDocumentReplacedDomainEvent(
+            Raise(new RestaurantDocumentFileReplacedDomainEvent(
                 Guid.NewGuid(),
                 Id,
-                existingDocument.PublicId,
+                existingDocument.Id,
+                oldPublicId,
                 publicId));
 
             return Result.Success(existingDocument);
@@ -179,19 +184,22 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         return result;
     }
 
-    public Result Suspend()
+    public Result Suspend(string reason)
     {
         if (Status != RestaurantStatus.Approved)
             return Result.Failure(RestaurantErrors.OnlyApprovedRestaurantsCanBeSuspended);
 
         Status = RestaurantStatus.Suspended;
 
+        SuspendedAt = DateTime.UtcNow;
+        SuspensionReason = reason;
+
         Raise(new RestaurantSuspendedDomainEvent(Guid.NewGuid(), Id));
 
         return Result.Success();
     }
 
-    public Result RejectDocument(DocumentId documentId)
+    public Result RejectDocument(DocumentId documentId, string reason)
     {
         if (Status != RestaurantStatus.UnderReview)
         {
@@ -207,13 +215,12 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
                 RestaurantErrors.DocumentNotFound);
         }
 
-        if (document.Status != DocumentStatus.UnderReview)
-        {
-            return Result.Failure(
-                RestaurantErrors.DocumentMustBeUnderReview);
-        }
+        var result = document.Reject(reason);
 
-        document.Reject();
+        if (result.IsFailure)
+        {
+            return result;
+        }
 
         Status = RestaurantStatus.Draft;
 
@@ -222,7 +229,23 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         return Result.Success();
     }
 
-    public Result ResubmitDocument(DocumentId documentId, FileUrl fileUrl)
+    public Result EnsureDocumentCanBeResubmitted(DocumentId documentId)
+    {
+        if (Status != RestaurantStatus.Draft)
+        {
+            return Result.Failure(RestaurantErrors.RestaurantMustBeInDraftState);
+        }
+
+        var document = GetDocument(documentId);
+
+        if (document is null)
+        {
+            return Result.Failure(RestaurantErrors.DocumentNotFound);
+        }
+
+        return document.CanResubmit();
+    }
+    public Result ResubmitDocument(DocumentId documentId, FileUrl fileUrl, PublicId publicId)
     {
         if (Status != RestaurantStatus.Draft)
         {
@@ -238,11 +261,18 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
                 RestaurantErrors.DocumentNotFound);
         }
 
-        var result = document.Resubmit(fileUrl);
+        var oldPublicId = document.PublicId;
+
+        var result = document.Resubmit(fileUrl, publicId);
 
         if (result.IsSuccess)
         {
-            Raise(new RestaurantDocumentResubmittedDomainEvent(Guid.NewGuid(), Id, document.Id));
+            Raise(new RestaurantDocumentFileReplacedDomainEvent(
+                Guid.NewGuid(),
+                Id,
+                document.Id,
+                oldPublicId,
+                publicId));
         }
 
         return result;
@@ -257,6 +287,9 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         }
 
         Status = RestaurantStatus.Approved;
+
+        SuspendedAt = null;
+        SuspensionReason = null;
 
         Raise(new RestaurantReactivatedDomainEvent(Guid.NewGuid(), Id));
 

@@ -26,6 +26,7 @@ public sealed class RestaurantDocument : Entity<DocumentId>
     public RestaurantId RestaurantId { get; private set; }
     public FileUrl FileUrl { get; private set; }
     public PublicId PublicId { get; private set; }
+    public RejectionReason? RejectionReason { get; private set; }
     public DocumentType Type { get; private set; }
     public DocumentStatus Status { get; private set; }
 
@@ -51,8 +52,29 @@ public sealed class RestaurantDocument : Entity<DocumentId>
     {
         Status = DocumentStatus.Rejected;
     }
+    public Result Reject(string reason)
+    {
+        if (Status != DocumentStatus.UnderReview)
+        {
+            return Result.Failure(RestaurantErrors.DocumentMustBeUnderReview);
+        }
 
-    internal Result Replace(FileUrl fileUrl)
+        Status = DocumentStatus.Rejected;
+
+        var rejectionReason = RejectionReason.Create(reason);
+
+        if (rejectionReason.IsFailure)
+        {
+            return rejectionReason;
+        }
+
+        RejectionReason = rejectionReason.Value;
+        Status = DocumentStatus.Rejected;
+
+        return Result.Success();
+    }
+
+    internal Result Replace(FileUrl fileUrl, PublicId publicId)
     {
         if (Status != DocumentStatus.Draft)
         {
@@ -61,11 +83,12 @@ public sealed class RestaurantDocument : Entity<DocumentId>
         }
 
         FileUrl = fileUrl;
+        PublicId = publicId;
 
         return Result.Success();
     }
 
-    internal Result Resubmit(FileUrl fileUrl)
+    internal Result Resubmit(FileUrl fileUrl, PublicId publicId)
     {
         if (Status != DocumentStatus.Rejected)
         {
@@ -74,8 +97,19 @@ public sealed class RestaurantDocument : Entity<DocumentId>
         }
 
         FileUrl = fileUrl;
+        PublicId = publicId;
 
         Status = DocumentStatus.Draft;
+
+        return Result.Success();
+    }
+    internal Result CanResubmit()
+    {
+        if (Status != DocumentStatus.Rejected)
+        {
+            return Result.Failure(
+                RestaurantErrors.OnlyRejectedDocumentsCanBeResubmitted);
+        }
 
         return Result.Success();
     }

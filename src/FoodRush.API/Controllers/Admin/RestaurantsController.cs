@@ -1,5 +1,11 @@
 ﻿using FoodRush.API.Extensions;
+using FoodRush.API.ViewModels;
 using FoodRush.Application.Common.Authorization;
+using FoodRush.Application.Features.Administration.Restaurants.Commands.ApproveRestaurantDocument;
+using FoodRush.Application.Features.Administration.Restaurants.Commands.ReactivateRestaurant;
+using FoodRush.Application.Features.Administration.Restaurants.Commands.RejectRestaurantDocument;
+using FoodRush.Application.Features.Administration.Restaurants.Commands.SuspendRestaurant;
+using FoodRush.Application.Features.Administration.Restaurants.Queries.GetRestaurantDetailsForReview;
 using FoodRush.Application.Features.Administration.Restaurants.Queries.SearchRestaurants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -24,4 +30,77 @@ public class RestaurantsController(IMediator sender) : ControllerBase
             failure => failure.Problem()
         );
     }
+
+    [HttpGet("{restaurantId:guid}/review")]
+    public async Task<IActionResult> GetRestaurantDetailsForReview(
+        Guid restaurantId,
+        CancellationToken cancellation)
+    {
+        var result = await sender.Send(
+            new GetRestaurantDetailsForReviewQuery(restaurantId),
+            cancellation);
+
+        return result.Match(
+            Ok,
+            failure => failure.Problem());
+    }
+
+    [HttpPost("{restaurantId:guid}/documents/{documentId:guid}/approve")]
+    public async Task<IActionResult> ApproveDocument(
+        Guid restaurantId,
+        Guid documentId,
+        CancellationToken cancellationToken)
+    {
+        var command = new ApproveRestaurantDocumentCommand(
+            restaurantId,
+            documentId);
+
+        var result = await sender.Send(command, cancellationToken);
+
+        return result.Match(
+            NoContent,
+            failure => failure.Problem());
+    }
+
+    [HttpPost("{restaurantId:guid}/documents/{documentId:guid}/reject")]
+    public async Task<IActionResult> RejectDocument(
+        Guid restaurantId,
+        Guid documentId,
+        RejectRestaurantDocumentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new RejectRestaurantDocumentCommand(
+            restaurantId,
+            documentId,
+            request.Reason);
+
+        var result = await sender.Send(command, cancellationToken);
+
+        return result.Match(
+            NoContent,
+            failure => failure.Problem());
+    }
+
+    [HttpPost("{restaurantId:Guid}/suspend")]
+    public async Task<IActionResult> SuspendRestaurant(Guid restaurantId, SuspendRestaurantRequest request, CancellationToken cancellationToken)
+    {
+        var command = new SuspendRestaurantCommand(restaurantId, request.Reason);
+        var result = await sender.Send(command, cancellationToken);
+
+        return result.Match(
+            Ok,
+            error => error.Problem());
+    }
+
+    [HttpPost("{restaurantId:Guid}/reactivate")]
+    public async Task<IActionResult> ReactivateRestaurant(Guid restaurantId, CancellationToken cancellationToken)
+    {
+        var command = new ReactivateRestaurantCommand(restaurantId);
+        var result = await sender.Send(command, cancellationToken);
+
+        return result.Match(
+            Ok,
+            error => error.Problem());
+    }
+
 }

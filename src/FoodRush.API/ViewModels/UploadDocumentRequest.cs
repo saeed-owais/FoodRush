@@ -5,3 +5,5 @@ namespace FoodRush.API.ViewModels;
 public sealed record UploadDocumentRequest(
     DocumentType DocumentType,
     IFormFile FileStream);
+public sealed record ResubmitDocumentRequest(
+    IFormFile FileStream);
