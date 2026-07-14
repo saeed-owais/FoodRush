@@ -1,5 +1,6 @@
 ﻿using Amazon.S3;
 using FoodRush.Application.Abstractions.Authentication;
+using FoodRush.Application.Abstractions.EventBus;
 using FoodRush.Application.Abstractions.Notifications;
 using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Abstractions.Persistence.Queries;
@@ -9,6 +10,8 @@ using FoodRush.Domain.Restaurants;
 using FoodRush.Infrastructure.Authentication;
 using FoodRush.Infrastructure.Authorization;
 using FoodRush.Infrastructure.BackgroundJobs;
+using FoodRush.Infrastructure.MassTransit;
+using FoodRush.Infrastructure.MassTransit.Consumers.Notifications;
 using FoodRush.Infrastructure.Notifications;
 using FoodRush.Infrastructure.Notifications.Templates;
 using FoodRush.Infrastructure.Persistence;
@@ -16,6 +19,7 @@ using FoodRush.Infrastructure.Persistence.Queries;
 using FoodRush.Infrastructure.Persistence.Repositories;
 using FoodRush.Infrastructure.Resilience;
 using FoodRush.Infrastructure.Storage;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +36,9 @@ namespace FoodRush.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -50,7 +56,8 @@ public static class DependencyInjection
             .AddNotifications(configuration)
             .AddStorageServices(configuration)
             .AddResilience()
-            .AddDapperQueries();
+            .AddDapperQueries()
+            .AddMassTransitMessaging(configuration);
 
         services.Configure<FrontendSettings>(configuration.GetSection(FrontendSettings.SectionName));
 
@@ -71,7 +78,9 @@ public static class DependencyInjection
 
         return services;
     }
-    public static IServiceCollection AddDatabase(this IServiceCollection services, string connectionString)
+    public static IServiceCollection AddDatabase(
+        this IServiceCollection services,
+        string connectionString)
     {
 
 
@@ -97,7 +106,9 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddJwtAuthentication(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         JwtSettings jwtSettings =
            configuration
@@ -209,7 +220,9 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddNotifications(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddNotifications(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.AddDataProtection();
 
@@ -224,6 +237,8 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, FakeEmailService>();
 
         services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+
+        services.AddTransient<IEmailTemplateRenderer2, EmailTemplateRenderer2>();
 
         services.AddScoped<IEmailService, SendGridEmailService>();
 
@@ -241,7 +256,9 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddStorageServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddStorageServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.Configure<CloudinarySettings>(configuration.GetSection(CloudinarySettings.SectionName));
 
@@ -275,6 +292,47 @@ public static class DependencyInjection
     {
         services.AddScoped<IRestaurantQueries, RestaurantQueries>();
         services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
+
+        return services;
+    }
+
+
+    public static IServiceCollection AddMassTransitMessaging(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<RabbitMqSettings>(configuration.GetSection(RabbitMqSettings.SectionName));
+
+        services.AddTransient<IEventBus, MassTransitEventBus>();
+
+        services.AddMassTransit(busConfigurator =>
+        {
+            //busConfigurator.AddConsumer<RestaurantSubmittedConsumer>();
+            busConfigurator.AddConsumer<RestaurantDocumentApprovedConsumer>(cfg =>
+            {
+                cfg.UseMessageRetry(
+                    r => r.Exponential(
+                        retryLimit: 3,
+                        minInterval: TimeSpan.FromSeconds(5),
+                        maxInterval: TimeSpan.FromSeconds(30),
+                        intervalDelta: TimeSpan.FromSeconds(5)));
+            });
+
+            busConfigurator.SetKebabCaseEndpointNameFormatter();
+
+            busConfigurator.UsingRabbitMq((context, cfg) =>
+            {
+                var rabbitMqSettings = context.GetRequiredService<IOptions<RabbitMqSettings>>().Value;
+                cfg.Host(
+                  new Uri($"rabbitmq://{rabbitMqSettings.Host}:{rabbitMqSettings.Port}/{rabbitMqSettings.VirtualHost}"),
+                  h =>
+                  {
+                      h.Username(rabbitMqSettings.Username);
+                      h.Password(rabbitMqSettings.Password);
+                  });
+                cfg.ConfigureEndpoints(context);
+            });
+        });
 
         return services;
     }

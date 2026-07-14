@@ -1,37 +1,48 @@
-﻿    <Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <WarningsNotAsErrors>NU1903</WarningsNotAsErrors>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<WarningsNotAsErrors>NU1903</WarningsNotAsErrors>
+	</PropertyGroup>
 
-  <ItemGroup>
-	  <PackageReference Include="CloudFlareR2Storage" Version="1.0.0" />
-	  <PackageReference Include="CloudinaryDotNet" Version="1.29.1" />
-	  <PackageReference Include="Dapper" Version="2.1.79" />
-	  <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" Version="10.7.0" />
-	  <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.9" />
-	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Hangfire" Version="1.8.23" />
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
-    <PackageReference Include="Hangfire.SqlServer" Version="1.8.23" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.8">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Polly" Version="8.7.0" />
-    <PackageReference Include="Polly.Extensions" Version="8.7.0" />
-    <PackageReference Include="SendGrid" Version="9.29.3" />
-  </ItemGroup>
+	<ItemGroup>
+	  <None Remove="Notifications\Templates\RestaurantDocumentApprovedEmailModel.sbn" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\FoodRush.Application\FoodRush.Application.csproj" />
-    <ProjectReference Include="..\FoodRush.Domain\FoodRush.Domain.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+	  <EmbeddedResource Include="Notifications\Templates\RestaurantDocumentApprovedEmailModel.sbn" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CloudFlareR2Storage" Version="1.0.0" />
+		<PackageReference Include="CloudinaryDotNet" Version="1.29.1" />
+		<PackageReference Include="Dapper" Version="2.1.79" />
+		<PackageReference Include="MassTransit" Version="9.1.2" />
+		<PackageReference Include="MassTransit.RabbitMQ" Version="9.1.2" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Hybrid" Version="10.7.0" />
+		<PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.9" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Hangfire" Version="1.8.23" />
+		<PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
+		<PackageReference Include="Hangfire.SqlServer" Version="1.8.23" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.8">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Polly" Version="8.7.0" />
+		<PackageReference Include="Polly.Extensions" Version="8.7.0" />
+		<PackageReference Include="Scriban" Version="7.2.5" />
+		<PackageReference Include="SendGrid" Version="9.29.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\FoodRush.Application\FoodRush.Application.csproj" />
+		<ProjectReference Include="..\FoodRush.Domain\FoodRush.Domain.csproj" />
+	</ItemGroup>
 
 </Project>

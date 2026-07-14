@@ -3,5 +3,5 @@ using FoodRush.Domain.Restaurants.ValueObjects;
 
 namespace FoodRush.Domain.Restaurants.DomainEvents;
 
-public sealed record RestaurantRejectedDomainEvent(Guid Id, RestaurantId RestaurantId)
-    : DomainEvent(Id);
+public sealed record RestaurantRejectedDomainEvent(RestaurantId RestaurantId)
+    : DomainEvent;

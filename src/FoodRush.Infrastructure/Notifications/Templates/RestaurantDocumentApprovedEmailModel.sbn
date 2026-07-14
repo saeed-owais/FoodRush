@@ -1,0 +1,27 @@
+﻿<!DOCTYPE html>
+
+<html>
+
+	<body>
+
+		<h2>Hello {{ OwnerName }}</h2>
+
+		<p>
+
+			Your restaurant
+
+			<strong>{{ RestaurantName }}</strong>
+
+			documents have been approved.
+
+		</p>
+
+		<p>
+
+			You can continue the onboarding process.
+
+		</p>
+
+	</body>
+
+</html>

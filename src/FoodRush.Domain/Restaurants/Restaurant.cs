@@ -72,7 +72,7 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
             longitude,
             deliveryRadius);
 
-        restaurant.Raise(new RestaurantRegisteredDomainEvent(Guid.NewGuid(), restaurant.Id));
+        restaurant.Raise(new RestaurantRegisteredDomainEvent(restaurant.Id));
 
         return restaurant;
     }
@@ -99,7 +99,6 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
             }
 
             Raise(new RestaurantDocumentFileReplacedDomainEvent(
-                Guid.NewGuid(),
                 Id,
                 existingDocument.Id,
                 oldPublicId,
@@ -113,7 +112,6 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         _documents.Add(document);
 
         Raise(new RestaurantDocumentUploadedDomainEvent(
-            Guid.NewGuid(),
             Id,
             document.Id,
             document.Type));
@@ -149,7 +147,7 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
                 document.MarkAsUnderReview();
         }
 
-        Raise(new RestaurantSubmittedForReviewDomainEvent(Guid.NewGuid(), Id));
+        Raise(new RestaurantSubmittedForReviewDomainEvent(Id));
 
         return Result.Success();
     }
@@ -177,7 +175,7 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
             return result;
         }
 
-        Raise(new RestaurantDocumentApprovedDomainEvent(Guid.NewGuid(), Id, document.Id));
+        Raise(new RestaurantDocumentApprovedDomainEvent(Id, document.Id, Name.Value));
 
         TryApproveRestaurant();
 
@@ -194,7 +192,7 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         SuspendedAt = DateTime.UtcNow;
         SuspensionReason = reason;
 
-        Raise(new RestaurantSuspendedDomainEvent(Guid.NewGuid(), Id));
+        Raise(new RestaurantSuspendedDomainEvent(Id));
 
         return Result.Success();
     }
@@ -224,7 +222,7 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
 
         Status = RestaurantStatus.Draft;
 
-        Raise(new RestaurantDocumentRejectedDomainEvent(Guid.NewGuid(), Id, document.Id));
+        Raise(new RestaurantDocumentRejectedDomainEvent(Id, document.Id));
 
         return Result.Success();
     }
@@ -268,7 +266,6 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         if (result.IsSuccess)
         {
             Raise(new RestaurantDocumentFileReplacedDomainEvent(
-                Guid.NewGuid(),
                 Id,
                 document.Id,
                 oldPublicId,
@@ -291,7 +288,7 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
         SuspendedAt = null;
         SuspensionReason = null;
 
-        Raise(new RestaurantReactivatedDomainEvent(Guid.NewGuid(), Id));
+        Raise(new RestaurantReactivatedDomainEvent(Id));
 
         return Result.Success();
     }
@@ -334,7 +331,7 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
 
         Status = RestaurantStatus.Approved;
 
-        Raise(new RestaurantApprovedDomainEvent(Guid.NewGuid(), Id));
+        Raise(new RestaurantApprovedDomainEvent(Id));
     }
 
     private bool AllRequiredDocumentsApproved()

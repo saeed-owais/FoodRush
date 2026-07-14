@@ -7,7 +7,7 @@ internal sealed class FakeEmailService(
     ILogger<FakeEmailService> logger)
     : IEmailService
 {
-    public Task SendAsync(string to, string subject, string body)
+    public Task SendAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
     {
         logger.LogInformation(
             """

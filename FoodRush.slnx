@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="docker-compose.yml" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/FoodRush.API/FoodRush.API.csproj" />
     <Project Path="src/FoodRush.Application/FoodRush.Application.csproj" />

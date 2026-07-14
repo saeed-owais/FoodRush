@@ -1,3 +1,6 @@
 ﻿namespace FoodRush.Domain.Common;
 
-public record DomainEvent(Guid Id) : IDomainEvent;
+public abstract record DomainEvent : IDomainEvent
+{
+    public Guid Id { get; init; } = Guid.NewGuid();
+}

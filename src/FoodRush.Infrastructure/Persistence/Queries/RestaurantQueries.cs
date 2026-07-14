@@ -2,6 +2,7 @@
 using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Abstractions.Persistence.Queries;
 using FoodRush.Application.Common.Models;
+using FoodRush.Application.Features.Administration.Restaurants.Queries;
 using FoodRush.Application.Features.Administration.Restaurants.Queries.GetRestaurantDetailsForReview;
 using FoodRush.Application.Features.Administration.Restaurants.Queries.SearchRestaurants;
 using FoodRush.Application.Features.Restaurants.Onboarding;
@@ -56,6 +57,33 @@ internal sealed class RestaurantQueries : IRestaurantQueries
         restaurant.Documents.AddRange(await multi.ReadAsync<RestaurantOnboardingDocumentResponse>());
 
         return restaurant;
+    }
+
+    public async Task<RestaurantOwnerInfo?> GetOwnerInfoAsync(
+    RestaurantId restaurantId,
+    CancellationToken cancellationToken)
+    {
+        using var connection = _sqlConnectionFactory.CreateConnection();
+
+        const string sql = """
+        SELECT
+            u.DisplayName AS Name,
+            u.Email AS Email
+        FROM Restaurants.Restaurants r
+        INNER JOIN [identity].Users u
+            ON u.Id = r.OwnerId
+        WHERE r.Id = @RestaurantId;
+        """;
+
+        CommandDefinition command = new(
+            sql,
+            new
+            {
+                RestaurantId = restaurantId.Value
+            },
+            cancellationToken: cancellationToken);
+
+        return await connection.QuerySingleOrDefaultAsync<RestaurantOwnerInfo>(command);
     }
 
     public async Task<RestaurantDetailsForReviewResponse?> GetRestaurantDetailsForReviewAsync(
