@@ -8,7 +8,15 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="Notifications\Templates\ChangeEmailModel.sbn" />
+	  <None Remove="Notifications\Templates\ResetPasswordEmailModel.sbn" />
 	  <None Remove="Notifications\Templates\RestaurantDocumentApprovedEmailModel.sbn" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Include="Notifications\Templates\ChangeEmailModel.sbn" />
+	  <EmbeddedResource Include="Notifications\Templates\ResetPasswordEmailModel.sbn" />
+	  <EmbeddedResource Include="Notifications\Templates\VerifyEmailModel.sbn" />
 	</ItemGroup>
 
 	<ItemGroup>

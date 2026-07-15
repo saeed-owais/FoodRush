@@ -7,7 +7,7 @@ namespace FoodRush.Infrastructure.MassTransit.Consumers.Notifications;
 
 internal sealed class RestaurantApprovedConsumer
     (IEmailService emailService,
-    IEmailTemplateRenderer2 renderer)
+    IEmailTemplateRenderer renderer)
     : IConsumer<RestaurantApprovedIntegrationEvent>
 {
     public async Task Consume(ConsumeContext<RestaurantApprovedIntegrationEvent> context)

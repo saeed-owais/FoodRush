@@ -33,24 +33,28 @@ internal sealed class LogoutAllSessionsCommandHandler(
         }
 
         DateTime utcNow = DateTime.UtcNow;
+        var securityStamp = Guid.NewGuid().ToString();
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var strategy = dbContext.Database.CreateExecutionStrategy();
 
         try
         {
-            user.SecurityStamp =
-                Guid.NewGuid().ToString();
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+                user.SecurityStamp = securityStamp;
 
-            await refreshTokenService.RevokeAllAsync(
-                user.Id,
-                currentRequestInfo.IpAddress,
-                utcNow,
-                cancellationToken);
+                await refreshTokenService.RevokeAllAsync(
+                    user.Id,
+                    currentRequestInfo.IpAddress,
+                    utcNow,
+                    cancellationToken);
 
-            await dbContext.SaveChangesAsync(
-                cancellationToken);
+                await dbContext.SaveChangesAsync(
+                    cancellationToken);
 
-            await transaction.CommitAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            });
         }
         catch (Exception ex)
         {

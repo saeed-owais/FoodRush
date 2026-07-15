@@ -52,23 +52,31 @@ internal sealed class ResetPasswordCommandHandler
             return Result.Failure(AuthErrors.InvalidPasswordResetToken);
         }
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-
         try
         {
-            user.PasswordHash = passwordHasher.Hash(request.NewPassword);
-
-            user.SecurityStamp = Guid.NewGuid().ToString();
-
+            var strategy = dbContext.Database.CreateExecutionStrategy();
+            string newSecurityStamp = Guid.NewGuid().ToString();
             DateTime utcNow = DateTime.UtcNow;
+            string? revokedByIp = currentRequestInfo.IpAddress;
 
-            var revokedByIp = currentRequestInfo.IpAddress;
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction =
+                    await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            await refreshTokenService.RevokeAllAsync(user.Id, revokedByIp, utcNow, cancellationToken);
+                user.PasswordHash = passwordHasher.Hash(request.NewPassword);
+                user.SecurityStamp = newSecurityStamp;
 
-            await dbContext.SaveChangesAsync(cancellationToken);
+                await refreshTokenService.RevokeAllAsync(
+                    user.Id,
+                    revokedByIp,
+                    utcNow,
+                    cancellationToken);
 
-            await transaction.CommitAsync(cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
+
+                await transaction.CommitAsync(cancellationToken);
+            });
         }
         catch (Exception ex)
         {

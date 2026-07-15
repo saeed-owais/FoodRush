@@ -52,13 +52,15 @@ internal sealed class ResendVerificationEmailCommandHandler
         string verificationLink =
             $"{_frontendSettings.EmailVerificationUrl}?token={Uri.EscapeDataString(token)}";
 
-        string emailBody = emailTemplateRenderer.RenderVerifyEmail(verificationLink);
+        string emailBody = await emailTemplateRenderer.RenderAsync(
+            new VerifyEmailModel(verificationLink),
+            cancellationToken);
 
         backgroundJobService.Enqueue<IEmailService>(emailService => emailService.SendAsync(
             to: user.Email,
             subject: "Verify Your Email",
-            body: emailBody
-            ));
+            body: emailBody,
+            cancellationToken));
 
         return Result.Success();
     }

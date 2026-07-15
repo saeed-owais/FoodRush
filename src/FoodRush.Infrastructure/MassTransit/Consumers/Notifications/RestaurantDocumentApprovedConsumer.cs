@@ -7,7 +7,7 @@ namespace FoodRush.Infrastructure.MassTransit.Consumers.Notifications;
 
 internal sealed class RestaurantDocumentApprovedConsumer
 (
-    IEmailTemplateRenderer2 renderer,
+    IEmailTemplateRenderer renderer,
     IEmailService emailService
 )
     : IConsumer<RestaurantDocumentApprovedIntegrationEvent>

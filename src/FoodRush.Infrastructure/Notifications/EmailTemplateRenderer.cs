@@ -4,8 +4,8 @@ using System.Reflection;
 
 namespace FoodRush.Infrastructure.Notifications;
 
-internal sealed class EmailTemplateRenderer2
-    : IEmailTemplateRenderer2
+internal sealed class EmailTemplateRenderer
+    : IEmailTemplateRenderer
 {
     public async Task<string> RenderAsync<TModel>(
        TModel model,

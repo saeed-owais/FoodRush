@@ -13,7 +13,6 @@ using FoodRush.Infrastructure.BackgroundJobs;
 using FoodRush.Infrastructure.MassTransit;
 using FoodRush.Infrastructure.MassTransit.Consumers.Notifications;
 using FoodRush.Infrastructure.Notifications;
-using FoodRush.Infrastructure.Notifications.Templates;
 using FoodRush.Infrastructure.Persistence;
 using FoodRush.Infrastructure.Persistence.Queries;
 using FoodRush.Infrastructure.Persistence.Repositories;
@@ -237,8 +236,6 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, FakeEmailService>();
 
         services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
-
-        services.AddTransient<IEmailTemplateRenderer2, EmailTemplateRenderer2>();
 
         services.AddScoped<IEmailService, SendGridEmailService>();
 
