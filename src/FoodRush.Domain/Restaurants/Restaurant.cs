@@ -331,7 +331,7 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
 
         Status = RestaurantStatus.Approved;
 
-        Raise(new RestaurantApprovedDomainEvent(Id));
+        Raise(new RestaurantApprovedDomainEvent(Id, Name));
     }
 
     private bool AllRequiredDocumentsApproved()

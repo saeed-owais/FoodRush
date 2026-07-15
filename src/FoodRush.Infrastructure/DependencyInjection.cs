@@ -307,17 +307,6 @@ public static class DependencyInjection
 
         services.AddMassTransit(busConfigurator =>
         {
-            //busConfigurator.AddConsumer<RestaurantSubmittedConsumer>();
-            busConfigurator.AddConsumer<RestaurantDocumentApprovedConsumer>(cfg =>
-            {
-                cfg.UseMessageRetry(
-                    r => r.Exponential(
-                        retryLimit: 3,
-                        minInterval: TimeSpan.FromSeconds(5),
-                        maxInterval: TimeSpan.FromSeconds(30),
-                        intervalDelta: TimeSpan.FromSeconds(5)));
-            });
-
             busConfigurator.SetKebabCaseEndpointNameFormatter();
 
             busConfigurator.UsingRabbitMq((context, cfg) =>
@@ -331,6 +320,28 @@ public static class DependencyInjection
                       h.Password(rabbitMqSettings.Password);
                   });
                 cfg.ConfigureEndpoints(context);
+            });
+
+            busConfigurator.AddConsumer<RestaurantDocumentApprovedConsumer>(cfg =>
+            {
+                cfg.UseMessageRetry(
+                    r => r.Exponential(
+                        retryLimit: 3,
+                        minInterval: TimeSpan.FromSeconds(5),
+                        maxInterval: TimeSpan.FromSeconds(30),
+                        intervalDelta: TimeSpan.FromSeconds(5)));
+            });
+
+            busConfigurator.AddConsumer<RestaurantApprovedConsumer>(cfg =>
+            {
+                cfg.UseMessageRetry(retryCongurator =>
+                {
+                    retryCongurator.Exponential(
+                        retryLimit: 3,
+                        minInterval: TimeSpan.FromSeconds(5),
+                        maxInterval: TimeSpan.FromSeconds(30),
+                        intervalDelta: TimeSpan.FromSeconds(5));
+                });
             });
         });
 

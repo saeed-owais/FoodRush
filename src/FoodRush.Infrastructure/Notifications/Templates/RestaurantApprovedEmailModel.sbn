@@ -1,0 +1,76 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Restaurant Approved</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Arial,Helvetica,sans-serif;">
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f5f5;padding:40px 0;">
+    <tr>
+        <td align="center">
+
+            <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                   style="background:#ffffff;border-radius:8px;overflow:hidden;">
+
+                <tr>
+                    <td style="background:#22c55e;padding:24px;text-align:center;">
+                        <h1 style="margin:0;color:#ffffff;font-size:28px;">
+                            🎉 Restaurant Approved
+                        </h1>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding:40px;color:#333333;">
+
+                        <p style="font-size:18px;margin-top:0;">
+                            Hello <strong>{{ owner_name }}</strong>,
+                        </p>
+
+                        <p style="font-size:16px;line-height:1.7;">
+                            Congratulations!
+                        </p>
+
+                        <p style="font-size:16px;line-height:1.7;">
+                            Your restaurant
+                            <strong>{{ restaurant_name }}</strong>
+                            has been successfully approved by the FoodRush team.
+                        </p>
+
+                        <p style="font-size:16px;line-height:1.7;">
+                            You can now:
+                        </p>
+
+                        <ul style="font-size:16px;line-height:1.8;">
+                            <li>Add and manage your menu.</li>
+                            <li>Receive customer orders.</li>
+                            <li>Grow your business on FoodRush.</li>
+                        </ul>
+
+                        <p style="font-size:16px;line-height:1.7;">
+                            We're excited to have you as one of our restaurant partners.
+                        </p>
+
+                        <p style="margin-top:40px;">
+                            Best regards,<br/>
+                            <strong>FoodRush Team</strong>
+                        </p>
+
+                    </td>
+                </tr>
+
+                <tr>
+                    <td style="padding:20px;text-align:center;background:#f8f8f8;color:#888;font-size:12px;">
+                        © 2026 FoodRush. All rights reserved.
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

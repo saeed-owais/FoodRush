@@ -12,6 +12,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <EmbeddedResource Include="Notifications\Templates\RestaurantApprovedEmailModel.sbn" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <EmbeddedResource Include="Notifications\Templates\RestaurantDocumentApprovedEmailModel.sbn" />
 	</ItemGroup>
 

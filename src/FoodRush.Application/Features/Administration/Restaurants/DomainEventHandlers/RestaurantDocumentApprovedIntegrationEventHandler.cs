@@ -20,7 +20,7 @@ internal class RestaurantDocumentApprovedIntegrationEventHandler
             notification.RestaurantId.Value,
             notification.DocumentId.Value,
             notification.RestaurantName,
-            "saidewisali@gmail.com",
+            ownerInfo.Email,
             ownerInfo.Name
         );
 
