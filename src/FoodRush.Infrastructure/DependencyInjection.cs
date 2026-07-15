@@ -340,6 +340,18 @@ public static class DependencyInjection
                         intervalDelta: TimeSpan.FromSeconds(5));
                 });
             });
+
+            busConfigurator.AddConsumer<RestaurantDocumentRejectedConsumer>(cfg =>
+            {
+                cfg.UseMessageRetry(retryCongurator =>
+                {
+                    retryCongurator.Exponential(
+                        retryLimit: 3,
+                        minInterval: TimeSpan.FromSeconds(5),
+                        maxInterval: TimeSpan.FromSeconds(30),
+                        intervalDelta: TimeSpan.FromSeconds(5));
+                });
+            });
         });
 
         return services;

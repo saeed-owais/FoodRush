@@ -6,5 +6,8 @@ namespace FoodRush.Domain.Restaurants.DomainEvents.Document;
 
 public sealed record RestaurantDocumentRejectedDomainEvent(
     RestaurantId RestaurantId,
-    DocumentId DocumentId)
+    Name Name,
+    DocumentId DocumentId,
+    string DocumentName,
+    string Reason)
     : DomainEvent;

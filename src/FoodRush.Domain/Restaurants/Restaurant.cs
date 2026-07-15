@@ -222,7 +222,12 @@ public sealed class Restaurant : AggregateRoot<RestaurantId>, IAuditable, ISoftD
 
         Status = RestaurantStatus.Draft;
 
-        Raise(new RestaurantDocumentRejectedDomainEvent(Id, document.Id));
+        Raise(new RestaurantDocumentRejectedDomainEvent(
+            Id,
+            Name,
+            document.Id,
+            document.Status.ToString(),
+            reason));
 
         return Result.Success();
     }
