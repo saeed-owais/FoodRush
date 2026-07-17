@@ -14,6 +14,7 @@ using FoodRush.Infrastructure.MassTransit;
 using FoodRush.Infrastructure.MassTransit.Consumers.Notifications;
 using FoodRush.Infrastructure.Notifications;
 using FoodRush.Infrastructure.Persistence;
+using FoodRush.Infrastructure.Persistence.Interceptors;
 using FoodRush.Infrastructure.Persistence.Queries;
 using FoodRush.Infrastructure.Persistence.Repositories;
 using FoodRush.Infrastructure.Resilience;
@@ -83,7 +84,7 @@ public static class DependencyInjection
     {
 
 
-        services.AddDbContext<ApplicationDbContext>(options =>
+        services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             options.UseSqlServer(connectionString, sqlOptions =>
@@ -94,10 +95,20 @@ public static class DependencyInjection
                     errorNumbersToAdd: null);
             });
 
+            options.AddInterceptors(
+                sp.GetRequiredService<SoftDeleteInterceptor>(),
+                sp.GetRequiredService<AuditInterceptor>(),
+                sp.GetRequiredService<PublishDomainEventsInterceptor>()
+            );
+
             options.EnableDetailedErrors();
 
             options.EnableSensitiveDataLogging();
         });
+
+        services.AddScoped<AuditInterceptor>();
+        services.AddScoped<SoftDeleteInterceptor>();
+        services.AddScoped<PublishDomainEventsInterceptor>();
 
         services.AddScoped<IApplicationDbContext>(
             sp => sp.GetRequiredService<ApplicationDbContext>());
@@ -305,6 +316,13 @@ public static class DependencyInjection
         services.AddMassTransit(busConfigurator =>
         {
             busConfigurator.SetKebabCaseEndpointNameFormatter();
+
+            busConfigurator.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
+            {
+                o.UseSqlServer();
+
+                o.UseBusOutbox();
+            });
 
             busConfigurator.UsingRabbitMq((context, cfg) =>
             {

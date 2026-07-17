@@ -1,4 +1,7 @@
-﻿using FoodRush.Application.Abstractions.Messaging;
+﻿using FoodRush.Application.Abstractions.EventBus;
+using FoodRush.Application.Abstractions.Messaging;
+using FoodRush.Application.Abstractions.Persistence.Queries;
+using FoodRush.Application.Features.Administration.Restaurants.IntegrationEvents;
 using FoodRush.Domain.Common;
 using FoodRush.Domain.Common.Errors;
 using FoodRush.Domain.Restaurants;
@@ -10,6 +13,8 @@ namespace FoodRush.Application.Features.Administration.Restaurants.Commands.Reje
 
 internal sealed class RejectRestaurantDocumentCommandHandler
     (IRestaurantRepository restaurantRepository,
+    IEventBus bus,
+    IRestaurantQueries restaurantQueries,
      ILogger<RejectRestaurantDocumentCommandHandler> logger)
     : ICommandHandler<RejectRestaurantDocumentCommand>
 {
@@ -40,6 +45,32 @@ internal sealed class RejectRestaurantDocumentCommandHandler
             return result;
         }
 
+        await PublishIntegrationEventsAsync(
+            restaurant,
+            documentId,
+            request.Reason,
+            cancellationToken);
+
         return Result.Success();
+    }
+    private async Task PublishIntegrationEventsAsync(
+        Restaurant restaurant,
+        DocumentId documentId,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        var ownerInfo = await restaurantQueries.GetOwnerInfoAsync(restaurant.Id, cancellationToken);
+        var document = restaurant.Documents.FirstOrDefault();
+        await bus.Publish(
+            new RestaurantDocumentRejectedIntegrationEvent(
+                Guid.NewGuid(),
+                restaurant.Id.Value,
+                restaurant.Name.Value,
+                documentId.Value,
+                document.Type.ToString(),
+                ownerInfo.Name,
+                ownerInfo.Email,
+                reason),
+            cancellationToken);
     }
 }

@@ -1,50 +1,32 @@
-﻿using FoodRush.Application.Abstractions.Authentication;
-using FoodRush.Application.Abstractions.Persistence;
-using FoodRush.Domain.Common;
+﻿using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Domain.Entities.Identity;
 using FoodRush.Domain.Interfaces;
 using FoodRush.Domain.Restaurants;
 using FoodRush.Domain.Restaurants.Entities.RestaurantDocument;
-using MediatR;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace FoodRush.Infrastructure.Persistence;
 
-public class ApplicationDbContext : DbContext, IApplicationDbContext
+public partial class ApplicationDbContext : DbContext, IApplicationDbContext
 {
-    private readonly IUserContext _userContext;
-
-    private readonly IPublisher _publisher;
     public ApplicationDbContext(
-        DbContextOptions<ApplicationDbContext> options,
-        IUserContext userContext,
-        IPublisher publisher)
+        DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
-        _userContext = userContext;
-        _publisher = publisher;
     }
 
     #region Properties
     public DbSet<User> Users { get; set; }
-
     public DbSet<Role> Roles { get; set; }
-
     public DbSet<Permission> Permissions { get; set; }
-
     public DbSet<UserRole> UserRoles { get; set; }
-
     public DbSet<UserPermission> UserPermissions { get; set; }
-
     public DbSet<RolePermission> RolePermissions { get; set; }
-
     public DbSet<RefreshToken> RefreshTokens { get; set; }
-
     public DbSet<OtpRequest> OtpRequests { get; set; }
-
     public DbSet<Restaurant> Restaurants { get; set; }
-
     public DbSet<RestaurantDocument> RestaurantDocuments { get; set; }
     #endregion
 
@@ -54,93 +36,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         // Apply configurations from the assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
+        modelBuilder.AddInboxStateEntity();
+
         ApplySoftDeleteQueryFilters(modelBuilder);
     }
-
-    public override async Task<int> SaveChangesAsync(
-    CancellationToken cancellationToken = default)
-    {
-        DateTime utcNow = DateTime.UtcNow;
-
-        Guid? currentUserId =
-            _userContext.IsAuthenticated
-                ? _userContext.UserId
-                : null;
-
-        foreach (var entry in ChangeTracker
-            .Entries<IAuditable>())
-        {
-            switch (entry.State)
-            {
-                case EntityState.Added:
-
-                    entry.Entity.CreatedAt = utcNow;
-
-                    entry.Entity.CreatedBy = currentUserId;
-
-                    entry.Entity.UpdatedAt = utcNow;
-
-                    entry.Entity.UpdatedBy = currentUserId;
-
-                    break;
-
-                case EntityState.Modified:
-
-                    entry.Entity.UpdatedAt = utcNow;
-
-                    entry.Entity.UpdatedBy = currentUserId;
-
-                    break;
-            }
-        }
-
-        foreach (var entry in ChangeTracker.Entries<ISoftDeletable>())
-        {
-            if (entry.State != EntityState.Deleted)
-                continue;
-
-            entry.State = EntityState.Modified;
-
-            entry.Entity.IsDeleted = true;
-
-            entry.Entity.DeletedAt = utcNow;
-
-            entry.Entity.DeletedBy = currentUserId;
-
-            if (entry.Entity is IAuditable auditable)
-            {
-                auditable.UpdatedAt = utcNow;
-                auditable.UpdatedBy = currentUserId;
-            }
-        }
-
-        var entitiesWithEvents = ChangeTracker
-            .Entries<IHasDomainEvents>()
-            .Select(e => e.Entity)
-            .Where(e => e.DomainEvents.Any())
-            .ToList();
-
-        var domainEvents = entitiesWithEvents
-            .SelectMany(e => e.DomainEvents)
-            .ToList();
-
-        var result = await base.SaveChangesAsync(cancellationToken);
-
-        foreach (var entity in entitiesWithEvents)
-        {
-            entity.ClearDomainEvents();
-        }
-
-        foreach (var domainEvent in domainEvents)
-        {
-            await _publisher.Publish(
-                domainEvent,
-                cancellationToken);
-        }
-
-        return result;
-    }
-
     private static void ApplySoftDeleteQueryFilters(
         ModelBuilder modelBuilder)
     {
@@ -156,7 +57,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             }
         }
     }
-
     private static LambdaExpression GenerateIsDeletedFilter(
         Type entityType)
     {
