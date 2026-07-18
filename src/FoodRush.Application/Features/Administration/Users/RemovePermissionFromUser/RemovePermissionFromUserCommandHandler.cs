@@ -45,25 +45,31 @@ internal sealed class RemovePermissionFromUserCommandHandler
             return Result.Failure(Error.NotFound("UserPermission.NotFound", $"Permission with ID {request.PermissionId} is not assigned to user with ID {request.UserId}."));
         }
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var strategy = dbContext.Database.CreateExecutionStrategy();
 
         string securityStamp = Guid.NewGuid().ToString();
 
         try
         {
-            dbContext.UserPermissions.Remove(userPermission);
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction =
+                    await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            await dbContext.Users
-                .Where(u => u.Id == request.UserId)
-                .ExecuteUpdateAsync(
-                    u => u.SetProperty(
-                        user => user.SecurityStamp,
-                        securityStamp),
-                    cancellationToken);
+                dbContext.UserPermissions.Remove(userPermission);
 
-            await dbContext.SaveChangesAsync(cancellationToken);
+                await dbContext.Users
+                    .Where(u => u.Id == request.UserId)
+                    .ExecuteUpdateAsync(
+                        u => u.SetProperty(
+                            user => user.SecurityStamp,
+                            securityStamp),
+                        cancellationToken);
 
-            await transaction.CommitAsync(cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
+
+                await transaction.CommitAsync(cancellationToken);
+            });
         }
         catch (Exception ex)
         {

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<body style="font-family: Arial, Helvetica, sans-serif; color: #333333; line-height: 1.6;">
+
+    <h2>Hello {{ owner_name }},</h2>
+
+    <p>
+        We have reviewed the documents submitted for your restaurant
+        <strong>{{ restaurant_name }}</strong>.
+    </p>
+
+    <p>
+        Unfortunately, the following document could not be approved:
+    </p>
+
+    <p>
+        <strong>{{ document_name }}</strong>
+    </p>
+
+    <p>
+        <strong>Reason for rejection:</strong>
+    </p>
+
+    <blockquote style="margin:16px 0;padding:12px 16px;border-left:4px solid #dc3545;background:#f8f9fa;">
+        {{ reason }}
+    </blockquote>
+
+    <p>
+        Please review the feedback above, update the document if necessary,
+        and upload a new version through the FoodRush dashboard.
+    </p>
+
+    <p>
+        Once resubmitted, our team will review it as soon as possible.
+    </p>
+
+    <p>
+        Thank you for choosing <strong>FoodRush</strong>.
+    </p>
+
+    <p>
+        Best regards,<br />
+        <strong>FoodRush Team</strong>
+    </p>
+
+</body>
+
+</html>

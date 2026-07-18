@@ -47,24 +47,33 @@ internal sealed class AssignPermissionToUserCommandHandler
             PermissionId = request.PermissionId
         };
 
-        await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
 
         string newSecurityStamp = Guid.NewGuid().ToString();
+
         try
         {
-            await _dbContext.UserPermissions.AddAsync(userPermission, cancellationToken);
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction =
+                    await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            await _dbContext.Users
-                .Where(u => u.Id == request.UserId)
-                .ExecuteUpdateAsync(
-                    u => u.SetProperty(
-                        user => user.SecurityStamp,
-                        newSecurityStamp),
+                await _dbContext.UserPermissions.AddAsync(
+                    userPermission,
                     cancellationToken);
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+                await _dbContext.Users
+                    .Where(u => u.Id == request.UserId)
+                    .ExecuteUpdateAsync(
+                        u => u.SetProperty(
+                            user => user.SecurityStamp,
+                            newSecurityStamp),
+                        cancellationToken);
 
-            await transaction.CommitAsync(cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                await transaction.CommitAsync(cancellationToken);
+            });
         }
         catch (Exception ex)
         {
@@ -73,8 +82,6 @@ internal sealed class AssignPermissionToUserCommandHandler
                 "Failed to assign permission {PermissionId} to user {UserId}",
                 request.PermissionId,
                 request.UserId);
-
-            await transaction.RollbackAsync(cancellationToken);
 
             throw;
         }

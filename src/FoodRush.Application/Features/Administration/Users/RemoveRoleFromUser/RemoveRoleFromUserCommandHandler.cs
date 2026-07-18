@@ -33,24 +33,30 @@ internal sealed class RemoveRoleFromUserCommandHandler
             );
         }
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var strategy = dbContext.Database.CreateExecutionStrategy();
 
         string securityStamp = Guid.NewGuid().ToString();
 
         try
         {
-            await dbContext.Users
-            .Where(u => u.Id == request.UserId)
-            .ExecuteUpdateAsync(
-                u => u.SetProperty(
-                    user => user.SecurityStamp,
-                    securityStamp),
-                cancellationToken);
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction =
+                    await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            dbContext.UserRoles.Remove(userRole);
-            await dbContext.SaveChangesAsync(cancellationToken);
+                await dbContext.Users
+                .Where(u => u.Id == request.UserId)
+                .ExecuteUpdateAsync(
+                    u => u.SetProperty(
+                        user => user.SecurityStamp,
+                        securityStamp),
+                    cancellationToken);
 
-            await transaction.CommitAsync(cancellationToken);
+                dbContext.UserRoles.Remove(userRole);
+                await dbContext.SaveChangesAsync(cancellationToken);
+
+                await transaction.CommitAsync(cancellationToken);
+            });
         }
         catch (Exception ex)
         {

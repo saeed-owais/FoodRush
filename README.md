@@ -1,246 +1,277 @@
-# FoodRush Delivery Platform
+<div align="center">
 
-## Overview
+# 🍔 FoodRush
 
-FoodRush is a scalable food delivery platform built using ASP.NET Core and Clean Architecture principles.
-The project is designed to support enterprise-level features such as authentication, restaurant onboarding, ordering, payments, delivery tracking, notifications, and multi-language support.
+### Enterprise Food Delivery Backend built with .NET 10
 
-This repository currently contains the Sprint 0 foundation setup, including:
+A production-oriented backend built using **Clean Architecture**, **Domain-Driven Design (DDD)**, **CQRS**, **Vertical Slice Architecture**, and **Event-Driven Architecture**.
 
-* Clean Architecture solution structure
-* Dockerized development environment
-* SQL Server and Redis integration
-* Entity Framework Core setup and migrations
-* Structured logging with Serilog
-* Health checks
-* Global exception handling
-* Strongly typed configuration system
-* Middleware pipeline foundation
+Designed to demonstrate modern backend engineering practices for scalable, maintainable, and reliable distributed systems.
+
+![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=for-the-badge)
+![Clean Architecture](https://img.shields.io/badge/Clean-Architecture-blue?style=for-the-badge)
+![DDD](https://img.shields.io/badge/DDD-Domain--Driven--Design-success?style=for-the-badge)
+![CQRS](https://img.shields.io/badge/CQRS-MediatR-orange?style=for-the-badge)
+![MassTransit](https://img.shields.io/badge/MassTransit-RabbitMQ-FF6600?style=for-the-badge)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge)
+
+</div>
 
 ---
 
-# Architecture
+# 📑 Table of Contents
 
-The solution follows Clean Architecture with clear separation of concerns.
+- [Overview](#-overview)
+- [Why FoodRush?](#-why-foodrush)
+- [Highlights](#-highlights)
+- [Architecture](#-architecture)
+- [Technology Stack](#-technology-stack)
+- [Solution Structure](#-solution-structure)
+- [Getting Started](#-getting-started)
+- [Documentation](#-documentation)
+- [Project Status](#-project-status)
+- [Roadmap](#-roadmap)
+- [Design Principles](#-design-principles)
+- [License](#-license)
 
-## Solution Structure
+---
+
+# 📖 Overview
+
+FoodRush is an enterprise-inspired backend for a food delivery platform built with modern .NET technologies and software architecture principles.
+
+Rather than focusing on simple CRUD operations, the project explores real-world backend challenges including authentication, authorization, asynchronous messaging, transactional consistency, background processing, resilience, and cloud integrations.
+
+The primary goal is to build a scalable and maintainable backend while applying production-ready engineering practices.
+
+---
+
+# 🎯 Why FoodRush?
+
+FoodRush was created as a learning project that goes beyond basic application development.
+
+It focuses on understanding how modern enterprise applications are designed by combining architectural patterns, messaging, and clean separation of concerns.
+
+The project emphasizes writing code that is easy to maintain, extend, and evolve over time.
+
+---
+
+# ✨ Highlights
+
+- ✅ Clean Architecture
+- ✅ Domain-Driven Design (DDD)
+- ✅ CQRS
+- ✅ Vertical Slice Architecture
+- ✅ Domain Events
+- ✅ Integration Events
+- ✅ Transactional Outbox
+- ✅ Transactional Inbox
+- ✅ RabbitMQ
+- ✅ MassTransit
+- ✅ Entity Framework Core
+- ✅ Dapper
+- ✅ ASP.NET Core Identity
+- ✅ JWT Authentication
+- ✅ Refresh Tokens
+- ✅ Permission-Based Authorization
+- ✅ Hangfire
+- ✅ Polly
+- ✅ SendGrid
+- ✅ Scriban
+- ✅ Cloudflare R2
+- ✅ Cloudinary
+- ✅ Serilog
+- ✅ Seq
+- ✅ Docker
+
+---
+
+# 🏛 Architecture
+
+The solution follows **Clean Architecture**, keeping business rules completely isolated from infrastructure concerns.
 
 ```text
-FoodRush/
- ├── src/
- │    ├── FoodRush.Domain
- │    ├── FoodRush.Application
- │    ├── FoodRush.Infrastructure
- │    ├── FoodRush.API
- │    ├── FoodRush.Hubs
- │
- ├── tests/
- │    ├── FoodRush.Tests.Unit
- │    ├── FoodRush.Tests.Integration
+                Client
+                   │
+                   ▼
+             FoodRush.API
+                   │
+                   ▼
+        FoodRush.Application
+                   │
+                   ▼
+           FoodRush.Domain
+
+FoodRush.Infrastructure
+implements Application abstractions
 ```
 
-## Layer Responsibilities
+For a detailed explanation of the architecture, see:
 
-### FoodRush.Domain
-
-Contains:
-
-- Core entities
-- Base models
-- Domain contracts and interfaces
-
-### FoodRush.Application
-
-Contains:
-
-* Use cases
-* DTOs
-* Result pattern
-* Validation
-* Application contracts
-
-### FoodRush.Infrastructure
-
-Contains:
-
-* EF Core
-* Database access
-* External services
-* Repository implementations
-* Infrastructure integrations
-
-### FoodRush.API
-
-Contains:
-
-* Controllers
-* Middleware
-* Swagger
-* Health checks
-* Dependency injection setup
-
-### FoodRush.Hubs
-
-Contains:
-
-* SignalR hubs
-* Real-time communication features
+**📘 [Architecture Documentation](docs/architecture.md)**
 
 ---
 
-# Tech Stack
+# 🛠 Technology Stack
 
 ## Backend
 
-* ASP.NET Core
-* Entity Framework Core
-* SQL Server
-* Redis
-* Serilog
-* Docker
-
-## Architecture & Patterns
-
-* Clean Architecture
-* Result Pattern
-* Middleware Pipeline
-* Options Pattern
-* Global Exception Handling
-
----
-
-# Features Implemented in Sprint 0
-
-## Foundation Setup
-
-* Clean Architecture solution scaffold
-* Docker Compose environment
-* SQL Server container
-* Redis container
-* API container
+- .NET 10
+- ASP.NET Core Web API
+- Entity Framework Core
+- Dapper
 
 ## Database
 
-* EF Core setup
-* AppDbContext
-* Initial migration
-* Automatic migrations in development
+- SQL Server
+- Redis
+
+## Messaging
+
+- RabbitMQ
+- MassTransit
+
+## Background Processing
+
+- Hangfire
+
+## Storage
+
+- Cloudflare R2
+- Cloudinary
+
+## Notifications
+
+- SendGrid
+- Scriban
+
+## Resilience
+
+- Polly
 
 ## Logging
 
-* Structured logging with Serilog
-* Correlation ID support
-* Request logging
+- Serilog
+- Seq
 
-## Error Handling
+## Containerization
 
-* Global exception handler
-* Custom result pattern
-* Validation errors
-* ProblemDetails responses
-
-## Health Monitoring
-
-* SQL Server health checks
-* Redis health checks
-* `/health` endpoint
-
-## Configuration
-
-* Strongly typed settings
-* Configuration validation
-* Environment-based configuration
+- Docker
+- Docker Compose
 
 ---
 
-# Prerequisites
+# 📂 Solution Structure
 
-Before running the project, ensure the following are installed:
-
-* .NET SDK 8+
-* Docker Desktop
-* Git
+```text
+FoodRush
+│
+├── src
+│   ├── FoodRush.API
+│   ├── FoodRush.Application
+│   ├── FoodRush.Domain
+│   ├── FoodRush.Infrastructure
+│   └── FoodRush.Hubs (Planned)
+│
+├── tests
+│   ├── FoodRush.Tests.Unit (Planned)
+│   └── FoodRush.Tests.Integration (Planned)
+│
+└── docs
+    ├── architecture.md
+    ├── api.md
+    ├── application.md
+    ├── domain.md
+    └── infrastructure.md
+```
 
 ---
 
-# Running the Project
+# 🚀 Getting Started
 
-## Clone Repository
+## Prerequisites
+
+Install the following before running the project:
+
+- .NET 10 SDK
+- Docker Desktop
+- Git
+
+---
+
+## Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/saeed-owais/FoodRush.git
+
 cd FoodRush
 ```
 
 ---
 
-# Run Using Docker
+## Run the Application
 
-## Build and Run Containers
+Start all required services using Docker Compose:
 
 ```bash
 docker compose up --build
 ```
 
-Containers:
+This will start:
 
-* SQL Server
-* Redis
-* FoodRush API
-
----
-
-# API Endpoints
-
-## Swagger
-
-```text
-http://localhost:5000/swagger
-```
-
-## Health Check
-
-```text
-http://localhost:5000/health
-```
+- SQL Server
+- Redis
+- RabbitMQ
+- Seq
+- FoodRush API
 
 ---
 
-# Entity Framework Commands
+## Available Services
 
-## Add Migration
+| Service | URL |
+|----------|-----|
+| API | http://localhost:8080 |
+| RabbitMQ Management | http://localhost:15672 |
+| Seq | http://localhost:5341 |
+| Health Check | http://localhost:8080/health |
 
-```bash
-dotnet ef migrations add MigrationName -p src/FoodRush.Infrastructure -s src/FoodRush.API
-```
+Default RabbitMQ credentials:
 
-## Update Database
-
-```bash
-dotnet ef database update -p src/FoodRush.Infrastructure -s src/FoodRush.API
+```text
+Username: guest
+Password: guest
 ```
 
 ---
 
-# Configuration
+## Entity Framework Commands
 
-## Environment Files
-
-```text
-appsettings.json
-appsettings.Development.json
-appsettings.Production.json
-```
-
-## User Secrets
-
-Sensitive information should not be committed to source control.
-
-Use .NET User Secrets during development:
+### Create Migration
 
 ```bash
-dotnet user-secrets init
+dotnet ef migrations add MigrationName \
+-p src/FoodRush.Infrastructure \
+-s src/FoodRush.API
 ```
+
+### Update Database
+
+```bash
+dotnet ef database update \
+-p src/FoodRush.Infrastructure \
+-s src/FoodRush.API
+```
+
+---
+
+## Configuration
+
+The application uses:
+
+- appsettings.json
+- appsettings.Development.json
+- .NET User Secrets
 
 Example:
 
@@ -250,88 +281,80 @@ dotnet user-secrets set "JwtSettings:SecretKey" "your-secret-key"
 
 ---
 
-# Logging
+# 📚 Documentation
 
-The application uses Serilog for structured logging.
+Detailed documentation is available in the **docs** directory.
 
-Configured features:
-
-* Console logging
-* Correlation IDs
-* Request logging
-* Environment-based log levels
-
----
-
-# Health Checks
-
-The project includes infrastructure health monitoring for:
-
-* SQL Server
-* Redis
-
-Health endpoint:
-
-```text
-/health
-```
+| Document | Description |
+|----------|-------------|
+| [Architecture](docs/architecture.md) | Overall architecture and design decisions |
+| [Domain](docs/domain.md) | Business model and domain layer |
+| [Application](docs/application.md) | Use cases, CQRS, and orchestration |
+| [Infrastructure](docs/infrastructure.md) | External integrations and technical implementations |
+| [API](docs/api.md) | HTTP layer and application entry point |
 
 ---
 
-# Docker Services
+# 📈 Project Status
 
-## SQL Server
-
-* Port: 1433
-
-## Redis
-
-* Port: 6379
-
-## API
-
-* Port: 5000
-
----
-
-# Git Workflow
-
-Recommended branch strategy:
-
-* `main` → production-ready code
-* `develop` → active development
-* `feature/*` → feature branches
-
-Example:
-
-```text
-feature/authentication
-feature/order-system
-feature/payment-integration
-```
+| Module | Status |
+|----------|--------|
+| Authentication | ✅ |
+| Authorization | ✅ |
+| User Management | ✅ |
+| Role Management | ✅ |
+| Permission Management | ✅ |
+| Restaurant Management | ✅ |
+| RabbitMQ Integration | ✅ |
+| Transactional Outbox | ✅ |
+| Transactional Inbox | ✅ |
+| Email Notifications | ✅ |
+| Background Jobs | ✅ |
+| Cloud Storage | ✅ |
+| Health Checks | ✅ |
+| SignalR | 🚧 Planned |
+| Unit Tests | 🚧 Planned |
+| Integration Tests | 🚧 Planned |
 
 ---
 
-# Current Project Status
+# 🗺 Roadmap
 
-## Completed
-
-* Sprint 0 Foundation Setup
-
-## Upcoming
-
-* Authentication & Authorization
-* JWT & Refresh Tokens
-* Role-Based Access Control
-* Restaurant Management
-* Ordering System
-* Payments
-* Delivery Tracking
+- SignalR Integration
+- Unit Testing
+- Integration Testing
+- OpenTelemetry
+- Distributed Caching
+- API Versioning
+- Rate Limiting
+- CI/CD Pipeline
 
 ---
 
-# Notes
+# 🎯 Design Principles
 
-* The project currently targets development infrastructure setup.
-* Production deployment configuration will be added in later sprints.
-* CI/CD pipelines and automated tests are planned for upcoming tasks.
+FoodRush follows modern software engineering practices including:
+
+- Clean Architecture
+- Domain-Driven Design
+- CQRS
+- Vertical Slice Architecture
+- SOLID Principles
+- Dependency Injection
+- Separation of Concerns
+- Transactional Outbox
+- Asynchronous Messaging
+
+---
+
+# 🤝 Contributing
+
+Contributions, suggestions, and feedback are always welcome.
+
+If you'd like to improve the project, feel free to open an issue or submit a pull request.
+
+---
+
+# 📄 License
+
+This project is licensed under the **MIT License**.

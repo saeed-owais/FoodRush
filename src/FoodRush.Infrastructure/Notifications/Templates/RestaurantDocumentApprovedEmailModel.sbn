@@ -1,0 +1,34 @@
+﻿<!DOCTYPE html>
+<html>
+
+<body style="font-family: Arial, Helvetica, sans-serif; color: #333; line-height: 1.6;">
+
+    <h2>Hello {{ OwnerName }},</h2>
+
+    <p>
+        Congratulations!
+    </p>
+
+    <p>
+        Your restaurant
+        <strong>{{ RestaurantName }}</strong>
+        has been approved by the FoodRush team.
+    </p>
+
+    <p>
+        You can now continue the onboarding process, complete your restaurant setup,
+        and start receiving customer orders.
+    </p>
+
+    <p>
+        Thank you for choosing <strong>FoodRush</strong>.
+    </p>
+
+    <p>
+        Best regards,<br />
+        <strong>FoodRush Team</strong>
+    </p>
+
+</body>
+
+</html>

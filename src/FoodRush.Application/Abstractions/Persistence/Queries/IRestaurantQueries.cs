@@ -1,4 +1,5 @@
 ﻿using FoodRush.Application.Common.Models;
+using FoodRush.Application.Features.Administration.Restaurants.Queries;
 using FoodRush.Application.Features.Administration.Restaurants.Queries.GetRestaurantDetailsForReview;
 using FoodRush.Application.Features.Administration.Restaurants.Queries.SearchRestaurants;
 using FoodRush.Application.Features.Restaurants.Onboarding;
@@ -19,4 +20,8 @@ public interface IRestaurantQueries
     Task<RestaurantOnboardingResponse?> GetMyRestaurantOnboardingQuery(
         RestaurantId restaurantId,
         CancellationToken cancellationToken);
+
+    Task<RestaurantOwnerInfo?> GetOwnerInfoAsync(
+    RestaurantId restaurantId,
+    CancellationToken cancellationToken);
 }

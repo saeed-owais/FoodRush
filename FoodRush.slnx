@@ -10,4 +10,7 @@
     <Project Path="tests/FoodRush.Tests.Integration/FoodRush.Tests.Integration.csproj" />
     <Project Path="tests/FoodRush.Tests.Unit/FoodRush.Tests.Unit.csproj" />
   </Folder>
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
 </Solution>

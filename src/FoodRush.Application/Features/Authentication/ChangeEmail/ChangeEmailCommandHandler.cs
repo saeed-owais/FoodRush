@@ -73,12 +73,16 @@ internal sealed class ChangeEmailCommandHandler
 
         string confirmationLink = $"{_frontendSettings.ChangeEmailUrl}?token={Uri.EscapeDataString(token)}";
 
-        string emailBody = emailTemplateRenderer.RenderChangeEmail(confirmationLink);
+        string emailBody = await emailTemplateRenderer
+            .RenderAsync(
+                new ChangeEmailModel(confirmationLink),
+                cancellationToken);
 
         backgroundJobService.Enqueue<IEmailService>(
             emailService => emailService.SendAsync(to: request.NewEmail,
                 subject: "Confirm your email change",
-                body: emailBody
+                body: emailBody,
+                cancellationToken
             ));
 
         return Result.Success();

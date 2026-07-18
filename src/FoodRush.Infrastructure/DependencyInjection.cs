@@ -1,5 +1,6 @@
 ﻿using Amazon.S3;
 using FoodRush.Application.Abstractions.Authentication;
+using FoodRush.Application.Abstractions.EventBus;
 using FoodRush.Application.Abstractions.Notifications;
 using FoodRush.Application.Abstractions.Persistence;
 using FoodRush.Application.Abstractions.Persistence.Queries;
@@ -9,13 +10,16 @@ using FoodRush.Domain.Restaurants;
 using FoodRush.Infrastructure.Authentication;
 using FoodRush.Infrastructure.Authorization;
 using FoodRush.Infrastructure.BackgroundJobs;
+using FoodRush.Infrastructure.MassTransit;
+using FoodRush.Infrastructure.MassTransit.Consumers.Notifications;
 using FoodRush.Infrastructure.Notifications;
-using FoodRush.Infrastructure.Notifications.Templates;
 using FoodRush.Infrastructure.Persistence;
+using FoodRush.Infrastructure.Persistence.Interceptors;
 using FoodRush.Infrastructure.Persistence.Queries;
 using FoodRush.Infrastructure.Persistence.Repositories;
 using FoodRush.Infrastructure.Resilience;
 using FoodRush.Infrastructure.Storage;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +36,9 @@ namespace FoodRush.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -50,7 +56,8 @@ public static class DependencyInjection
             .AddNotifications(configuration)
             .AddStorageServices(configuration)
             .AddResilience()
-            .AddDapperQueries();
+            .AddDapperQueries()
+            .AddMassTransitMessaging(configuration);
 
         services.Configure<FrontendSettings>(configuration.GetSection(FrontendSettings.SectionName));
 
@@ -71,11 +78,13 @@ public static class DependencyInjection
 
         return services;
     }
-    public static IServiceCollection AddDatabase(this IServiceCollection services, string connectionString)
+    public static IServiceCollection AddDatabase(
+        this IServiceCollection services,
+        string connectionString)
     {
 
 
-        services.AddDbContext<ApplicationDbContext>(options =>
+        services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             options.UseSqlServer(connectionString, sqlOptions =>
@@ -86,10 +95,20 @@ public static class DependencyInjection
                     errorNumbersToAdd: null);
             });
 
+            options.AddInterceptors(
+                sp.GetRequiredService<SoftDeleteInterceptor>(),
+                sp.GetRequiredService<AuditInterceptor>(),
+                sp.GetRequiredService<PublishDomainEventsInterceptor>()
+            );
+
             options.EnableDetailedErrors();
 
             options.EnableSensitiveDataLogging();
         });
+
+        services.AddScoped<AuditInterceptor>();
+        services.AddScoped<SoftDeleteInterceptor>();
+        services.AddScoped<PublishDomainEventsInterceptor>();
 
         services.AddScoped<IApplicationDbContext>(
             sp => sp.GetRequiredService<ApplicationDbContext>());
@@ -97,7 +116,9 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddJwtAuthentication(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         JwtSettings jwtSettings =
            configuration
@@ -209,7 +230,9 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddNotifications(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddNotifications(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.AddDataProtection();
 
@@ -241,7 +264,9 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddStorageServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddStorageServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.Configure<CloudinarySettings>(configuration.GetSection(CloudinarySettings.SectionName));
 
@@ -275,6 +300,77 @@ public static class DependencyInjection
     {
         services.AddScoped<IRestaurantQueries, RestaurantQueries>();
         services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
+
+        return services;
+    }
+
+
+    public static IServiceCollection AddMassTransitMessaging(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<RabbitMqSettings>(configuration.GetSection(RabbitMqSettings.SectionName));
+
+        services.AddTransient<IEventBus, MassTransitEventBus>();
+
+        services.AddMassTransit(busConfigurator =>
+        {
+            busConfigurator.SetKebabCaseEndpointNameFormatter();
+
+            busConfigurator.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
+            {
+                o.UseSqlServer();
+
+                o.UseBusOutbox();
+            });
+
+            busConfigurator.UsingRabbitMq((context, cfg) =>
+            {
+                var rabbitMqSettings = context.GetRequiredService<IOptions<RabbitMqSettings>>().Value;
+                cfg.Host(
+                  new Uri($"rabbitmq://{rabbitMqSettings.Host}:{rabbitMqSettings.Port}/{rabbitMqSettings.VirtualHost}"),
+                  h =>
+                  {
+                      h.Username(rabbitMqSettings.Username);
+                      h.Password(rabbitMqSettings.Password);
+                  });
+                cfg.ConfigureEndpoints(context);
+            });
+
+            busConfigurator.AddConsumer<RestaurantDocumentApprovedConsumer>(cfg =>
+            {
+                cfg.UseMessageRetry(
+                    r => r.Exponential(
+                        retryLimit: 3,
+                        minInterval: TimeSpan.FromSeconds(5),
+                        maxInterval: TimeSpan.FromSeconds(30),
+                        intervalDelta: TimeSpan.FromSeconds(5)));
+            });
+
+            busConfigurator.AddConsumer<RestaurantApprovedConsumer>(cfg =>
+            {
+                cfg.UseMessageRetry(retryCongurator =>
+                {
+                    retryCongurator.Exponential(
+                        retryLimit: 3,
+                        minInterval: TimeSpan.FromSeconds(5),
+                        maxInterval: TimeSpan.FromSeconds(30),
+                        intervalDelta: TimeSpan.FromSeconds(5));
+                });
+            });
+
+            busConfigurator.AddConsumer<RestaurantDocumentRejectedConsumer>(cfg =>
+            {
+                cfg.UseMessageRetry(retryCongurator =>
+                {
+                    retryCongurator.Exponential(
+                        retryLimit: 3,
+                        minInterval: TimeSpan.FromSeconds(5),
+                        maxInterval: TimeSpan.FromSeconds(30),
+                        intervalDelta: TimeSpan.FromSeconds(5));
+                });
+            });
+        });
 
         return services;
     }

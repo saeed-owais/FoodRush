@@ -53,27 +53,32 @@ internal sealed class ConfirmEmailChangeCommandHandler
             return Result.Failure(UserErrors.EmailAlreadyExists);
         }
 
-        user.SecurityStamp = Guid.NewGuid().ToString();
+        var strategy = dbContext.Database.CreateExecutionStrategy();
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        user.SecurityStamp = Guid.NewGuid().ToString();
+        var utcNow = DateTime.UtcNow;
+
         try
         {
-            user.Email = payload.NewEmail;
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+                user.Email = payload.NewEmail;
 
-            user.NormalizedEmail = normalizedEmail;
+                user.NormalizedEmail = normalizedEmail;
 
-            user.IsEmailVerified = true;
+                user.IsEmailVerified = true;
 
+                await refreshTokenService.RevokeAllAsync(
+                    user.Id,
+                    currentRequestInfo.IpAddress,
+                    utcNow,
+                    cancellationToken);
 
-            await refreshTokenService.RevokeAllAsync(
-                user.Id,
-                currentRequestInfo.IpAddress,
-                DateTime.UtcNow,
-                cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            });
         }
         catch (Exception ex)
         {

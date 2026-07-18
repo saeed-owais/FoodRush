@@ -3,7 +3,7 @@ using FoodRush.Application.Abstractions.Storage;
 using FoodRush.Domain.Restaurants.DomainEvents.Document;
 using Microsoft.Extensions.Logging;
 
-namespace FoodRush.Application.Features.Restaurants.DomainEvents;
+namespace FoodRush.Application.Features.Restaurants.DomainEventHandlers;
 
 internal class DocumentReplacedDomainEventHandler
     (IDocumentStorageService storageService,

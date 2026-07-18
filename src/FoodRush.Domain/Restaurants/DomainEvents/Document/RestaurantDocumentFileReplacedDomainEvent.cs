@@ -5,8 +5,7 @@ using FoodRush.Domain.Restaurants.ValueObjects;
 namespace FoodRush.Domain.Restaurants.DomainEvents.Document;
 
 public sealed record RestaurantDocumentFileReplacedDomainEvent(
-    Guid EventId,
     RestaurantId RestaurantId,
     DocumentId DocumentId,
     PublicId OldDocumentPublicId,
-    PublicId NewDocumentPublicId) : DomainEvent(EventId);
+    PublicId NewDocumentPublicId) : DomainEvent;

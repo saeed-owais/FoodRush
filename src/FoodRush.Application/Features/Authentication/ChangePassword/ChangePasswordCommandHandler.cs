@@ -45,23 +45,29 @@ internal sealed class ChangePasswordCommandHandler
             return Result.Failure(AuthErrors.SamePassword);
         }
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var strategy = dbContext.Database.CreateExecutionStrategy();
 
         var securityStamp = Guid.NewGuid().ToString();
 
         try
         {
-            user.PasswordHash = passwordHasher.Hash(request.NewPassword);
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction =
+                    await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            user.SecurityStamp = securityStamp;
+                user.PasswordHash = passwordHasher.Hash(request.NewPassword);
 
-            DateTime dateTime = DateTime.UtcNow;
+                user.SecurityStamp = securityStamp;
 
-            await refreshTokenService.RevokeAllAsync(user.Id, currentRequestInfo.IpAddress, dateTime, cancellationToken);
+                DateTime dateTime = DateTime.UtcNow;
 
-            await dbContext.SaveChangesAsync(cancellationToken);
+                await refreshTokenService.RevokeAllAsync(user.Id, currentRequestInfo.IpAddress, dateTime, cancellationToken);
 
-            await transaction.CommitAsync(cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
+
+                await transaction.CommitAsync(cancellationToken);
+            });
         }
         catch (Exception ex)
         {

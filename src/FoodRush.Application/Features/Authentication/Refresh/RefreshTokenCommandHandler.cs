@@ -48,21 +48,27 @@ internal sealed class RefreshTokenCommandHandler(
                 refreshTokenEntity.UserId,
                 refreshTokenEntity.Id);
 
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-
+            var strategy = dbContext.Database.CreateExecutionStrategy();
+            var securityStamp = Guid.NewGuid().ToString();
             try
             {
-                await refreshTokenService.RevokeAllAsync(
-                    refreshTokenEntity.UserId,
-                    ipAddress,
-                    utcNow,
-                    cancellationToken);
+                await strategy.ExecuteAsync(async () =>
+                {
+                    await using var transaction =
+                        await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-                refreshTokenEntity.User.SecurityStamp = Guid.NewGuid().ToString(); // Invalidate all existing tokens for the user   
+                    await refreshTokenService.RevokeAllAsync(
+                        refreshTokenEntity.UserId,
+                        ipAddress,
+                        utcNow,
+                        cancellationToken);
 
-                await dbContext.SaveChangesAsync(cancellationToken);
+                    refreshTokenEntity.User.SecurityStamp = securityStamp; // Invalidate all existing tokens for the user   
 
-                await transaction.CommitAsync(cancellationToken);
+                    await dbContext.SaveChangesAsync(cancellationToken);
+
+                    await transaction.CommitAsync(cancellationToken);
+                });
             }
             catch (Exception ex)
             {
