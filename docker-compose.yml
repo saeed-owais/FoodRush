@@ -88,17 +88,13 @@ services:
     networks:
       - foodrush-network
 
-  api:
+  foodrush.api:
+    image: ${DOCKER_REGISTRY-}foodrushapi
+
     build:
       context: .
       dockerfile: src/FoodRush.API/Dockerfile
-
-    container_name: foodrush-api
-    restart: unless-stopped
-
-    ports:
-      - "5000:8080"
-
+      
     depends_on:
       sqlserver:
         condition: service_healthy
